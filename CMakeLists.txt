@@ -20,6 +20,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
+# GLM
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm
+    GIT_TAG        1.0.1  # or latest stable
+)
+FetchContent_MakeAvailable(glm)
+
 add_subdirectory(apps)
 
 add_subdirectory(src)

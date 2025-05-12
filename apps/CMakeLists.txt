@@ -5,6 +5,7 @@ target_link_libraries(App
     PRIVATE
         glad
         glfw
+        glm
         GameCommon
 )
 
