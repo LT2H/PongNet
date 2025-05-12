@@ -20,8 +20,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-add_library(glad STATIC src/glad.c)
-target_include_directories(glad PUBLIC include)
-
 add_subdirectory(apps)
-add_subdirectory(include)
+
+add_subdirectory(src)
