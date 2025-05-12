@@ -6,6 +6,22 @@ project(
   Breakout
   VERSION 0.1
   DESCRIPTION "A simple Breakout game"
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
+
+# FetchContent added in CMake 3.11, downloads during the configure step
+# FetchContent_MakeAvailable was added in CMake 3.14; simpler usage
+include(FetchContent)
+
+# GLFW
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw
+    GIT_TAG        3.3.8  # or latest stable
+)
+FetchContent_MakeAvailable(glfw)
+
+add_library(glad STATIC src/glad.c)
+target_include_directories(glad PUBLIC include)
 
 add_subdirectory(apps)
+add_subdirectory(include)
