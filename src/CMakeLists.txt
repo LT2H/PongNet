@@ -16,4 +16,5 @@ set(GAME_COMMON_HEADER_LIST "${Breakout_SOURCE_DIR}/include")
 
 add_library(GameCommon Game.cpp ${GAME_COMMON_HEADER_LIST})
 target_include_directories(GameCommon PUBLIC ../include)
+target_link_libraries(GameCommon PRIVATE glm)
 target_compile_features(GameCommon PUBLIC cxx_std_20)
