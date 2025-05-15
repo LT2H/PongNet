@@ -14,12 +14,13 @@ class Shader
     // compiles the shader from given source code
     void compile(std::string_view vertex_source, std::string_view fragment_source,
                  std::string_view geometry_source =
-                     nullptr); // note: geometry source code is optional
+                     ""); // note: geometry source code is optional
 
     // utils
     void set_float(std::string_view name, float value, bool use_shader = false);
     void set_integer(std::string_view name, int value, bool use_shader = false);
-    void set_vector2f(std::string_view name, float x, float y, bool use_shader = false);
+    void set_vector2f(std::string_view name, float x, float y,
+                      bool use_shader = false);
     void set_vector2f(std::string_view name, const glm::vec2& value,
                       bool use_shader = false);
     void set_vector3f(std::string_view name, float x, float y, float z,

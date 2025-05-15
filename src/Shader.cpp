@@ -1,9 +1,7 @@
 #include <GameCommon/Shader.h>
 
 #include <GameCommon/Common.h>
-#include <cstddef>
 #include <iostream>
-#include "Shader.h"
 
 gm::Shader& gm::Shader::use()
 {
@@ -21,21 +19,25 @@ void gm::Shader::compile(std::string_view vertex_source,
 
     // Vertex shader
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_source.data(), nullptr);
+    const char* v_source{ vertex_source.data() };
+    glShaderSource(vertex_shader, 1, &v_source, nullptr);
     glCompileShader(fragment_shader);
     check_compile_errors(vertex_shader, "VERTEX");
 
     // Fragment shader
     fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_source.data(), nullptr);
+    const char* f_source{ fragment_source.data() };
+    glShaderSource(fragment_shader, 1, &f_source, nullptr);
     glCompileShader(fragment_shader);
     check_compile_errors(fragment_shader, "FRAGMENT");
 
     // If geometry shader source code is given, also compile geo shader
-    if (geometry_source != nullptr)
+    if (!geometry_source.empty())
     {
         geo_shader = glCreateShader(GL_GEOMETRY_SHADER);
-        glShaderSource(geo_shader, 1, &geometry_source.data(), nullptr);
+        const char* f_source{ fragment_source.data() };
+        const char* g_source{ geometry_source.data() };
+        glShaderSource(geo_shader, 1, &g_source, nullptr);
         check_compile_errors(geo_shader, "GEOMETRY");
     }
 
@@ -55,7 +57,7 @@ void gm::Shader::compile(std::string_view vertex_source,
     // necessary
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-    if (geometry_source != nullptr)
+    if (!geometry_source.empty())
     {
         glDeleteShader(geo_shader);
     }
@@ -106,7 +108,7 @@ void gm::Shader::set_vector3f(std::string_view name, float x, float y, float z,
     {
         use();
     }
-    glUniform3f(glGetUniformLocation(id, name), x, y, z);
+    glUniform3f(glGetUniformLocation(id, name.data()), x, y, z);
 }
 
 void gm::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
@@ -116,7 +118,7 @@ void gm::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
     {
         use();
     }
-    glUniform3f(glGetUniformLocation(id, name), value.x, value.y, value.z);
+    glUniform3f(glGetUniformLocation(id, name.data()), value.x, value.y, value.z);
 }
 
 void gm::Shader::set_vector4f(std::string_view name, float x, float y, float z,
@@ -126,7 +128,7 @@ void gm::Shader::set_vector4f(std::string_view name, float x, float y, float z,
     {
         use();
     }
-    glUniform4f(glGetUniformLocation(id, name), x, y, z, w);
+    glUniform4f(glGetUniformLocation(id, name.data()), x, y, z, w);
 }
 
 void gm::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
@@ -136,7 +138,8 @@ void gm::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
     {
         use();
     }
-    glUniform4f(glGetUniformLocation(id, name), value.x, value.y, value.z, value.w);
+    glUniform4f(
+        glGetUniformLocation(id, name.data()), value.x, value.y, value.z, value.w);
 }
 void gm::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
                              bool use_shader)
@@ -145,7 +148,8 @@ void gm::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
     {
         use();
     }
-    glUniformMatrix2x4fv(glGetUniformLocation(id, name), glm::value_ptr(matrix));
+    glUniformMatrix4fv(
+        glGetUniformLocation(id, name.data()), 1, false, glm::value_ptr(matrix));
 }
 
 void gm::Shader::check_compile_errors(unsigned int object, std::string_view type)
