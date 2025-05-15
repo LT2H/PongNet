@@ -14,9 +14,21 @@ class Texture2D
     Texture2D();
 
     void generate(unsigned int width, unsigned int height,
-                  std::vector<unsigned char>& data);
+      unsigned char* data);
 
     void bind() const;
+
+    unsigned int id() const { return id_; }
+
+    void set_internal_format(unsigned int internal_format)
+    {
+        internal_format_ = internal_format;
+    }
+
+    void set_image_format(unsigned int image_format)
+    {
+        image_format_ = image_format;
+    }
 
   private:
     // Holds the ID of the texture object, used for all texture operations to

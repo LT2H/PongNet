@@ -5,7 +5,7 @@ gm::Texture2D::Texture2D() {}
 
 
 void gm::Texture2D::generate(unsigned int width, unsigned int height,
-                             std::vector<unsigned char>& data)
+                             unsigned char* data)
 {
     width_  = width;
     height_ = height;
@@ -20,7 +20,7 @@ void gm::Texture2D::generate(unsigned int width, unsigned int height,
                  0,
                  image_format_,
                  GL_UNSIGNED_BYTE,
-                 data.data());
+                 data);
 
     // set Texture wrap and filter modes
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s_);
