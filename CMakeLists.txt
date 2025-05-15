@@ -28,6 +28,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+find_package(stb_image)
+
 add_subdirectory(apps)
 
 add_subdirectory(src)

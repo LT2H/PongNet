@@ -6,6 +6,7 @@ target_link_libraries(App
         glad
         glfw
         glm
+        stb
         GameCommon
 )
 

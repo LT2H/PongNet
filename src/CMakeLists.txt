@@ -10,11 +10,17 @@ target_include_directories(glad PUBLIC ../include)
 # Use C compiler instead?
 target_compile_features(glad PUBLIC cxx_std_20)
 
+# stb
+set(STB_HEADER_LIST "${Breakout_SOURCE_DIR}/include/stb/stb_image.h")
+add_library(stb stb_image.cpp ${STB_HEADER_LIST})
+target_include_directories(stb PUBLIC ../include)
+target_compile_features(stb PUBLIC cxx_std_20)
 
 # GameCommon
-set(GAME_COMMON_HEADER_LIST "${Breakout_SOURCE_DIR}/include")
-
-add_library(GameCommon Game.cpp ${GAME_COMMON_HEADER_LIST})
+add_library(GameCommon Game.cpp ResourceManager.cpp Shader.cpp Texture.cpp)
 target_include_directories(GameCommon PUBLIC ../include)
-target_link_libraries(GameCommon PRIVATE glm)
+
+# This depends on glm, stb, glad, glfw
+target_link_libraries(GameCommon PRIVATE glm stb glad glfw)
+
 target_compile_features(GameCommon PUBLIC cxx_std_20)
