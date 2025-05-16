@@ -1,14 +1,13 @@
 #include <GameCommon/ResourceManager.h>
-#include <vector>
 
 #include "GameCommon/Common.h"
 #include "GameCommon/Shader.h"
 #include "GameCommon/Texture.h"
 
-std::map<std::string_view, gm::Shader> gm::ResourceManager::shaders{};
-std::map<std::string_view, gm::Texture2D> gm::ResourceManager::textures{};
+std::map<std::string_view, gc::Shader> gc::ResourceManager::shaders{};
+std::map<std::string_view, gc::Texture2D> gc::ResourceManager::textures{};
 
-gm::Shader gm::ResourceManager::load_shader(std::string_view v_shader_file,
+gc::Shader gc::ResourceManager::load_shader(std::string_view v_shader_file,
                                             std::string_view f_shader_file,
                                             std::string_view g_shader_file,
                                             std::string_view name)
@@ -18,19 +17,24 @@ gm::Shader gm::ResourceManager::load_shader(std::string_view v_shader_file,
     return shaders[name];
 }
 
-gm::Shader gm::ResourceManager::get_shader(std::string_view name)
+gc::Shader gc::ResourceManager::get_shader(std::string_view name)
 {
     return shaders[name];
 }
 
-gm::Texture2D gm::ResourceManager::load_texture(std::string_view file, bool alpha,
+gc::Texture2D gc::ResourceManager::load_texture(std::string_view file, bool alpha,
                                                 std::string_view name)
 {
     textures[name] = load_texture_from_file(file, alpha);
     return textures[name];
 }
 
-void gm::ResourceManager::clear()
+gc::Texture2D gc::ResourceManager::get_texture(std::string_view name)
+{
+    return textures[name];
+}
+
+void gc::ResourceManager::clear()
 {
     for (auto& shader : shaders)
     {
@@ -43,7 +47,7 @@ void gm::ResourceManager::clear()
     }
 }
 
-gm::Shader gm::ResourceManager::load_shader_from_file(std::string_view v_shader_file,
+gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_file,
                                                       std::string_view f_shader_file,
                                                       std::string_view g_shader_file)
 {
@@ -57,6 +61,15 @@ gm::Shader gm::ResourceManager::load_shader_from_file(std::string_view v_shader_
         // open files
         std::ifstream vertex_shader_file{ v_shader_file.data() };
         std::ifstream fragment_shader_file{ f_shader_file.data() };
+
+        if (!vertex_shader_file.is_open()) {
+            std::cerr << "Failed to open vertex shader: " << v_shader_file << "\n";
+            std::exit(-1);
+        }
+        if (!fragment_shader_file.is_open()) {
+            std::cerr << "Failed to open fragment shader: " << f_shader_file << "\n";
+            std::exit(-1);
+        }
 
         std::stringstream v_shader_stream{};
         std::stringstream f_shader_stream{};
@@ -72,6 +85,12 @@ gm::Shader gm::ResourceManager::load_shader_from_file(std::string_view v_shader_
         if (!g_shader_file.empty())
         {
             std::ifstream geo_shader_file{ g_shader_file.data() };
+
+            if (!geo_shader_file.is_open()) {
+                std::cerr << "Failed to open geometry shader: " << g_shader_file << "\n";
+                std::exit(-1);
+            }
+
             std::stringstream g_shader_stream{};
 
             g_shader_stream << geo_shader_file.rdbuf();
@@ -90,7 +109,7 @@ gm::Shader gm::ResourceManager::load_shader_from_file(std::string_view v_shader_
     return shader;
 }
 
-gm::Texture2D gm::ResourceManager::load_texture_from_file(std::string_view file,
+gc::Texture2D gc::ResourceManager::load_texture_from_file(std::string_view file,
                                                           bool alpha)
 { // Create texture object
     Texture2D texture{};
