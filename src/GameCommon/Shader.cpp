@@ -3,13 +3,13 @@
 #include <GameCommon/Common.h>
 #include <iostream>
 
-gm::Shader& gm::Shader::use()
+gc::Shader& gc::Shader::use()
 {
     glUseProgram(id);
     return *this;
 }
 
-void gm::Shader::compile(std::string_view vertex_source,
+void gc::Shader::compile(std::string_view vertex_source,
                          std::string_view fragment_source,
                          std::string_view geometry_source)
 {
@@ -21,7 +21,7 @@ void gm::Shader::compile(std::string_view vertex_source,
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     const char* v_source{ vertex_source.data() };
     glShaderSource(vertex_shader, 1, &v_source, nullptr);
-    glCompileShader(fragment_shader);
+    glCompileShader(vertex_shader);
     check_compile_errors(vertex_shader, "VERTEX");
 
     // Fragment shader
@@ -35,9 +35,9 @@ void gm::Shader::compile(std::string_view vertex_source,
     if (!geometry_source.empty())
     {
         geo_shader = glCreateShader(GL_GEOMETRY_SHADER);
-        const char* f_source{ fragment_source.data() };
         const char* g_source{ geometry_source.data() };
         glShaderSource(geo_shader, 1, &g_source, nullptr);
+        glCompileShader(geo_shader);
         check_compile_errors(geo_shader, "GEOMETRY");
     }
 
@@ -45,7 +45,7 @@ void gm::Shader::compile(std::string_view vertex_source,
     id = glCreateProgram();
     glAttachShader(id, vertex_shader);
     glAttachShader(id, fragment_shader);
-    if (geometry_source != nullptr)
+    if (!geometry_source.empty())
     {
         glAttachShader(id, geo_shader);
     }
@@ -63,7 +63,7 @@ void gm::Shader::compile(std::string_view vertex_source,
     }
 }
 
-void gm::Shader::set_float(std::string_view name, float value, bool use_shader)
+void gc::Shader::set_float(std::string_view name, float value, bool use_shader)
 {
     if (use_shader)
     {
@@ -72,7 +72,7 @@ void gm::Shader::set_float(std::string_view name, float value, bool use_shader)
     glUniform1f(glGetUniformLocation(id, name.data()), value);
 }
 
-void gm::Shader::set_integer(std::string_view name, int value, bool use_shader)
+void gc::Shader::set_integer(std::string_view name, int value, bool use_shader)
 {
     if (use_shader)
     {
@@ -81,7 +81,7 @@ void gm::Shader::set_integer(std::string_view name, int value, bool use_shader)
     glUniform1f(glGetUniformLocation(id, name.data()), value);
 }
 
-void gm::Shader::set_vector2f(std::string_view name, float x, float y,
+void gc::Shader::set_vector2f(std::string_view name, float x, float y,
                               bool use_shader)
 {
     if (use_shader)
@@ -91,7 +91,7 @@ void gm::Shader::set_vector2f(std::string_view name, float x, float y,
     glUniform2f(glGetUniformLocation(id, name.data()), x, y);
 }
 
-void gm::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
+void gc::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -101,7 +101,7 @@ void gm::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
     glUniform2f(glGetUniformLocation(id, name.data()), value.x, value.y);
 }
 
-void gm::Shader::set_vector3f(std::string_view name, float x, float y, float z,
+void gc::Shader::set_vector3f(std::string_view name, float x, float y, float z,
                               bool use_shader)
 {
     if (use_shader)
@@ -111,7 +111,7 @@ void gm::Shader::set_vector3f(std::string_view name, float x, float y, float z,
     glUniform3f(glGetUniformLocation(id, name.data()), x, y, z);
 }
 
-void gm::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
+void gc::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -121,7 +121,7 @@ void gm::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
     glUniform3f(glGetUniformLocation(id, name.data()), value.x, value.y, value.z);
 }
 
-void gm::Shader::set_vector4f(std::string_view name, float x, float y, float z,
+void gc::Shader::set_vector4f(std::string_view name, float x, float y, float z,
                               float w, bool use_shader)
 {
     if (use_shader)
@@ -131,7 +131,7 @@ void gm::Shader::set_vector4f(std::string_view name, float x, float y, float z,
     glUniform4f(glGetUniformLocation(id, name.data()), x, y, z, w);
 }
 
-void gm::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
+void gc::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -141,7 +141,7 @@ void gm::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
     glUniform4f(
         glGetUniformLocation(id, name.data()), value.x, value.y, value.z, value.w);
 }
-void gm::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
+void gc::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
                              bool use_shader)
 {
     if (use_shader)
@@ -152,7 +152,7 @@ void gm::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
         glGetUniformLocation(id, name.data()), 1, false, glm::value_ptr(matrix));
 }
 
-void gm::Shader::check_compile_errors(unsigned int object, std::string_view type)
+void gc::Shader::check_compile_errors(unsigned int object, std::string_view type)
 {
     int success{};
     std::array<char, 1024> info_log{};
@@ -174,7 +174,7 @@ void gm::Shader::check_compile_errors(unsigned int object, std::string_view type
         glGetProgramiv(object, GL_LINK_STATUS, &success);
         if (!success)
         {
-            glGetShaderInfoLog(object, 1024, nullptr, info_log.data());
+            glGetProgramInfoLog(object, 1024, nullptr, info_log.data());
             std::cerr
                 << "| ERROR::Shader: Link-time error: Type: " << type << "\n"
                 << info_log.data()
