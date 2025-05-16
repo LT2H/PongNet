@@ -10,7 +10,6 @@ enum class GameState
     GAME_MENU,
     GAME_WIN,
 };
-    
 class Game
 {
   public:
@@ -29,7 +28,8 @@ class Game
 
     std::array<bool, 1024> keys;
 
-    unsigned int width;
-    unsigned int height;
+  private:
+    unsigned int width_;
+    unsigned int height_;
 };
 } // namespace gc

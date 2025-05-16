@@ -1,10 +1,10 @@
 #include <GameCommon/Texture.h>
 #include <GameCommon/Common.h>
 
-gm::Texture2D::Texture2D() {}
+gc::Texture2D::Texture2D() {}
 
 
-void gm::Texture2D::generate(unsigned int width, unsigned int height,
+void gc::Texture2D::generate(unsigned int width, unsigned int height,
                              unsigned char* data)
 {
     width_  = width;
@@ -32,4 +32,4 @@ void gm::Texture2D::generate(unsigned int width, unsigned int height,
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void gm::Texture2D::bind() const { glBindTexture(GL_TEXTURE_2D, id_); }
+void gc::Texture2D::bind() const { glBindTexture(GL_TEXTURE_2D, id_); }

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "GameCommon/Texture.h"
+#include "Texture.h"
 #include "Shader.h"
-#include "Common.h"
 
-namespace gm
+namespace gc
 {
 class ResourceManager
 {
@@ -14,7 +13,7 @@ class ResourceManager
     static std::map<std::string_view, Texture2D> textures;
 
     // loads (and generates) a shader program from file loading vertex, fragment (and
-    // geometry) shader's source code. If gShaderFile is not nullptr, it also loads a
+    // geometry) shader's source code. If gShaderFile is not "", it also loads a
     // geometry shader
     static Shader load_shader(std::string_view v_shader_file,
                               std::string_view f_shader_file,
@@ -47,4 +46,4 @@ class ResourceManager
     static Texture2D load_texture_from_file(std::string_view file, bool alpha);
 };
 
-} // namespace gm
+} // namespace gc

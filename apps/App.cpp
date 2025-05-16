@@ -13,7 +13,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 constexpr unsigned int SCR_WIDTH{ 800 };
 constexpr unsigned int SCR_HEIGHT{ 600 };
 
-gc::Game game(SCR_WIDTH, SCR_HEIGHT);
+gc::Game game{SCR_WIDTH, SCR_HEIGHT};
 
 int main()
 {
@@ -93,7 +93,7 @@ int main()
 
     // delete all resources as loaded using the resource manager
     // ---------------------------------------------------------
-    gm::ResourceManager::clear();
+    gc::ResourceManager::clear();
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
