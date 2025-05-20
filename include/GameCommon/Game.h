@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameLevel.h"
 #include "Common.h"
 
 namespace gc
@@ -13,7 +14,7 @@ enum class GameState
 class Game
 {
   public:
-    Game(unsigned int width, unsigned int height);
+    Game(u32 width, u32 height);
 
     ~Game();
     void init();
@@ -28,8 +29,11 @@ class Game
 
     std::array<bool, 1024> keys;
 
+    std::vector<GameLevel> levels{};
+    u32 current_level{ 0 };
+
   private:
-    unsigned int width_;
-    unsigned int height_;
+    u32 width_;
+    u32 height_;
 };
 } // namespace gc

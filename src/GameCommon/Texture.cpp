@@ -4,7 +4,7 @@
 gc::Texture2D::Texture2D() {}
 
 
-void gc::Texture2D::generate(unsigned int width, unsigned int height,
+void gc::Texture2D::generate(u32 width, u32 height,
                              unsigned char* data)
 {
     width_  = width;

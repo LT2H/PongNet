@@ -13,9 +13,9 @@ void gc::Shader::compile(std::string_view vertex_source,
                          std::string_view fragment_source,
                          std::string_view geometry_source)
 {
-    unsigned int vertex_shader{};
-    unsigned int fragment_shader{};
-    unsigned int geo_shader{};
+    u32 vertex_shader{};
+    u32 fragment_shader{};
+    u32 geo_shader{};
 
     // Vertex shader
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -152,7 +152,7 @@ void gc::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
         glGetUniformLocation(id, name.data()), 1, false, glm::value_ptr(matrix));
 }
 
-void gc::Shader::check_compile_errors(unsigned int object, std::string_view type)
+void gc::Shader::check_compile_errors(u32 object, std::string_view type)
 {
     int success{};
     std::array<char, 1024> info_log{};

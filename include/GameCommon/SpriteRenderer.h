@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "Shader.h"
 #include "Common.h"
 #include "Texture.h"
@@ -8,7 +10,7 @@ namespace gc
 class SpriteRenderer
 {
   public:
-    SpriteRenderer(const Shader& shader);
+    explicit SpriteRenderer(const Shader& shader);
     ~SpriteRenderer();
 
     void draw_sprite(const Texture2D& texture, const glm::vec2& position,
@@ -18,7 +20,7 @@ class SpriteRenderer
 
   private:
     Shader shader_;
-    unsigned int quad_VAO_;
+    u32 quad_VAO_;
 
     void init_render_data();
 };

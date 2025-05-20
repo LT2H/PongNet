@@ -35,7 +35,7 @@ class ResourceManager
   private:
     // private constructor, that is we do not want any actual resource manager
     // objects. Its members and functions should be publicly available (static).
-    ResourceManager() {}
+    explicit ResourceManager() {}
 
     // loads and generates a shader from file
     static Shader load_shader_from_file(std::string_view v_shader_file,

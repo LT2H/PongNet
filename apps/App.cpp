@@ -10,8 +10,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 // settings
-constexpr unsigned int SCR_WIDTH{ 800 };
-constexpr unsigned int SCR_HEIGHT{ 600 };
+constexpr u32 SCR_WIDTH{ 800 };
+constexpr u32 SCR_HEIGHT{ 600 };
 
 gc::Game game{SCR_WIDTH, SCR_HEIGHT};
 

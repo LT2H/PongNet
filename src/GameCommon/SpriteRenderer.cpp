@@ -41,7 +41,7 @@ void gc::SpriteRenderer::draw_sprite(const Texture2D& texture, const glm::vec2& 
 void gc::SpriteRenderer::init_render_data()
 {
     // configure VAO/VBO
-    unsigned int VBO{};
+    u32 VBO{};
     constexpr std::array vertices{
         // pos              // tex
         0.0f, 1.0f, 0.0f, 1.0f, // bottom-left

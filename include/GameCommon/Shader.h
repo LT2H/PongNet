@@ -7,7 +7,7 @@ namespace gc
 class Shader
 {
   public:
-    Shader() {}
+    explicit Shader() {}
 
     // Sets the current shader as active
     Shader& use();
@@ -34,10 +34,10 @@ class Shader
     void set_matrix4(std::string_view name, const glm::mat4& matrix,
                      bool use_shader = false);
 
-    unsigned int id{};
+    u32 id{};
 
   private:
     // checks if compilation or linking failed and if so, print the error logs
-    void check_compile_errors(unsigned int object, std::string_view type);
+    void check_compile_errors(u32 object, std::string_view type);
 };
 } // namespace gc

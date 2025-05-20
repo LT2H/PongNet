@@ -42,7 +42,7 @@ void gc::ResourceManager::clear()
     }
     for (auto& texture : textures)
     {
-        unsigned int id{ texture.second.id() };
+        u32 id{ texture.second.id() };
         glDeleteTextures(1, &id);
     }
 }

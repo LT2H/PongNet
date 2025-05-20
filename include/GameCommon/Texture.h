@@ -2,7 +2,6 @@
 
 #include "Common.h"
 #include "GameCommon/Common.h"
-#include <vector>
 
 namespace gc
 {
@@ -11,21 +10,21 @@ namespace gc
 class Texture2D
 {
   public:
-    Texture2D();
+    explicit Texture2D();
 
-    void generate(unsigned int width, unsigned int height,
+    void generate(u32 width, u32 height,
       unsigned char* data);
 
     void bind() const;
 
-    unsigned int id() const { return id_; }
+    u32 id() const { return id_; }
 
-    void set_internal_format(unsigned int internal_format)
+    void set_internal_format(u32 internal_format)
     {
         internal_format_ = internal_format;
     }
 
-    void set_image_format(unsigned int image_format)
+    void set_image_format(u32 image_format)
     {
         image_format_ = image_format;
     }
@@ -33,23 +32,23 @@ class Texture2D
   private:
     // Holds the ID of the texture object, used for all texture operations to
     // reference to this particular texture
-    unsigned int id_{};
+    u32 id_{};
 
     // Texture image dimensions, width and height of loaded image in pixels
-    unsigned int width_{ 0 };
-    unsigned int height_{ 0 };
+    u32 width_{ 0 };
+    u32 height_{ 0 };
 
     // Texture Format
-    unsigned int internal_format_{ GL_RGB }; // format of texture object
-    unsigned int image_format_{ GL_RGB };    // format of loaded image
+    u32 internal_format_{ GL_RGB }; // format of texture object
+    u32 image_format_{ GL_RGB };    // format of loaded image
 
     // Texture configuration
-    unsigned int wrap_s_{ GL_REPEAT }; // wrapping mode on S axis
-    unsigned int wrap_t_{ GL_REPEAT }; // wrapping mode on T axis
-    unsigned int filter_min_{
+    u32 wrap_s_{ GL_REPEAT }; // wrapping mode on S axis
+    u32 wrap_t_{ GL_REPEAT }; // wrapping mode on T axis
+    u32 filter_min_{
         GL_LINEAR
     }; // filtering mode if texture pixels < screen pixels
-    unsigned int filter_max_{
+    u32 filter_max_{
         GL_LINEAR
     }; // filtering mode if texture pixels > screen pixels
 };
