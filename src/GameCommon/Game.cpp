@@ -4,7 +4,7 @@
 
 gc::SpriteRenderer* renderer;
 
-gc::Game::Game(unsigned int width, unsigned int height)
+gc::Game::Game(u32 width, u32 height)
     : state{ GameState::GAME_ACTIVE }, keys{}, width_{ width }, height_{ height }
 {
 }
@@ -15,10 +15,7 @@ void gc::Game::init()
 {
     // Load shaders
     gc::ResourceManager::load_shader(
-        "res/shaders/shader.vert",
-        "res/shaders/shader.frag",
-        "",
-        "sprite");
+        "res/shaders/shader.vert", "res/shaders/shader.frag", "", "sprite");
 
     // configure shaders
     glm::mat4 projection{ glm::ortho(0.0f,
@@ -36,8 +33,22 @@ void gc::Game::init()
     renderer = new gc::SpriteRenderer{ gc::ResourceManager::get_shader("sprite") };
 
     // Load textures
+    gc::ResourceManager::load_texture("res/textures/awesomeface.png", true, "face");
     gc::ResourceManager::load_texture(
-        "res/textures/awesomeface.png", true, "face");
+        "res/textures/background.jpg", false, "background");
+    gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
+    gc::ResourceManager::load_texture(
+        "res/textures/indestructible_block.png", false, "indestructible_block");
+
+    // Load levels
+    GameLevel one;
+    one.load("res/levels/one.lvl", width_, height_);
+    GameLevel two;
+    two.load("res/levels/two.lvl", width_, height_);
+    GameLevel three;
+    three.load("res/levels/three.lvl", width_, height_);
+    GameLevel four;
+    four.load("res/levels/four.lvl", width_, height_);
 }
 
 void gc::Game::process_input(float dt) {}
@@ -46,9 +57,15 @@ void gc::Game::update(float dt) {}
 
 void gc::Game::render()
 {
-    renderer->draw_sprite(gc::ResourceManager::get_texture("face"),
-                          glm::vec2(200.0f, 200.0f),
-                          glm::vec2(300.0f, 400.0f),
-                          45.0f,
-                          glm::vec3(0.0f, 1.0f, 0.0f));
+    if (state == GameState::GAME_ACTIVE)
+    {
+        // Draw background
+        renderer->draw_sprite(gc::ResourceManager::get_texture("background"),
+                              glm::vec2(0.0f, 0.0f),
+                              glm::vec2(width_, height_),
+                              0.0f);
+
+        // Draw level
+        levels[current_level].draw(*renderer);
+    }
 }
