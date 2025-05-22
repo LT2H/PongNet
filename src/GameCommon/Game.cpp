@@ -2,6 +2,11 @@
 #include <GameCommon/Game.h>
 #include <GameCommon/SpriteRenderer.h>
 
+constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
+constexpr float PLAYER_VELOCITY{ 500.0f };
+
+gc::GameObject* player;
+
 gc::SpriteRenderer* renderer;
 
 gc::Game::Game(u32 width, u32 height)
@@ -39,6 +44,7 @@ void gc::Game::init()
     gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
     gc::ResourceManager::load_texture(
         "res/textures/indestructible_block.png", false, "indestructible_block");
+    gc::ResourceManager::load_texture("res/textures/paddle.png", true, "paddle");
 
     // Load levels
     GameLevel one;
@@ -54,9 +60,33 @@ void gc::Game::init()
     levels.push_back(two);
     levels.push_back(three);
     levels.push_back(four);
+
+    glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
+                                     height_ - PLAYER_SIZE.y } };
+
+    player = new GameObject{ player_pos,
+                             PLAYER_SIZE,
+                             ResourceManager::get_texture("paddle") };
 }
 
-void gc::Game::process_input(float dt) {}
+void gc::Game::process_input(float dt)
+{
+    if (state == GameState::GAME_ACTIVE)
+    {
+        float velocity{ PLAYER_VELOCITY * dt };
+        //move player's paddle
+        if (keys[GLFW_KEY_A]) {
+            if (player->pos().x >= 0.0f) {
+                player->decrease_pos_x(velocity);
+            }
+        }
+        if (keys[GLFW_KEY_D]) {
+            if (player->pos().x <= width_ - player->size().x) {
+                player->increase_pos_x(velocity);
+            }
+        }
+    }
+}
 
 void gc::Game::update(float dt) {}
 
@@ -72,5 +102,7 @@ void gc::Game::render()
 
         // Draw level
         levels[current_level].draw(*renderer);
+
+        player->draw(*renderer);
     }
 }

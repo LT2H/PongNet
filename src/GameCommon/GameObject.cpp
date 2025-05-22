@@ -10,7 +10,7 @@ gc::GameObject::GameObject(const glm::vec2& pos, const glm::vec2& size,
                            const Texture2D& sprite, const glm::vec3 color,
                            const glm::vec2& velocity)
     : pos_{ pos }, size_{ size }, sprite_(sprite), color_{ color },
-      velocity_{ velocity }, destroyed_{ false }
+      velocity_{ velocity }, destroyed_{ false }, rotation_{0.0f}, is_solid_{ false }
 {
 }
 

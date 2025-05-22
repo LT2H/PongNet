@@ -24,6 +24,14 @@ class GameObject
 
     constexpr bool is_solid() const { return is_solid_; }
 
+    constexpr glm::vec2 pos() const { return pos_; }
+
+    constexpr glm::vec2 size() const { return size_; }
+
+    void decrease_pos_x(const float& velocity) { pos_.x -= velocity; }
+    
+    void increase_pos_x(const float& velocity) { pos_.x += velocity; }
+
     void set_is_solid(bool value) { is_solid_ = true; }
 
     constexpr bool destroyed() const { return destroyed_; }
