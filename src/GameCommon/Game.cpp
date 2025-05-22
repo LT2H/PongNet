@@ -42,13 +42,18 @@ void gc::Game::init()
 
     // Load levels
     GameLevel one;
-    one.load("res/levels/one.lvl", width_, height_);
+    one.load("res/levels/one.lvl", width_, height_ / 2);
     GameLevel two;
-    two.load("res/levels/two.lvl", width_, height_);
+    two.load("res/levels/two.lvl", width_, height_ / 2);
     GameLevel three;
-    three.load("res/levels/three.lvl", width_, height_);
+    three.load("res/levels/three.lvl", width_, height_ / 2);
     GameLevel four;
-    four.load("res/levels/four.lvl", width_, height_);
+    four.load("res/levels/four.lvl", width_, height_ / 2);
+
+    levels.push_back(one);
+    levels.push_back(two);
+    levels.push_back(three);
+    levels.push_back(four);
 }
 
 void gc::Game::process_input(float dt) {}
