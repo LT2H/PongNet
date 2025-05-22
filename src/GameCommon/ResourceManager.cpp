@@ -1,5 +1,4 @@
 #include <GameCommon/ResourceManager.h>
-#include <string_view>
 
 #include "GameCommon/Common.h"
 #include "GameCommon/Shader.h"
