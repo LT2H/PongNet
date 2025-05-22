@@ -32,6 +32,8 @@ class ResourceManager
     // properly de-allocates all loaded resources
     static void clear();
 
+    static void print_all_textures();
+
   private:
     // private constructor, that is we do not want any actual resource manager
     // objects. Its members and functions should be publicly available (static).

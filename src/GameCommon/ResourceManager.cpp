@@ -1,4 +1,5 @@
 #include <GameCommon/ResourceManager.h>
+#include <string_view>
 
 #include "GameCommon/Common.h"
 #include "GameCommon/Shader.h"
@@ -47,6 +48,14 @@ void gc::ResourceManager::clear()
     }
 }
 
+void gc::ResourceManager::print_all_textures() 
+{
+    for (const auto& pair : textures)
+    {
+        std::string_view texture_name{ pair.first };
+        std::cout << texture_name << "\n";
+    }
+}
 gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_file,
                                                       std::string_view f_shader_file,
                                                       std::string_view g_shader_file)
@@ -62,11 +71,13 @@ gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_
         std::ifstream vertex_shader_file{ v_shader_file.data() };
         std::ifstream fragment_shader_file{ f_shader_file.data() };
 
-        if (!vertex_shader_file.is_open()) {
+        if (!vertex_shader_file.is_open())
+        {
             std::cerr << "Failed to open vertex shader: " << v_shader_file << "\n";
             std::exit(-1);
         }
-        if (!fragment_shader_file.is_open()) {
+        if (!fragment_shader_file.is_open())
+        {
             std::cerr << "Failed to open fragment shader: " << f_shader_file << "\n";
             std::exit(-1);
         }
@@ -86,8 +97,10 @@ gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_
         {
             std::ifstream geo_shader_file{ g_shader_file.data() };
 
-            if (!geo_shader_file.is_open()) {
-                std::cerr << "Failed to open geometry shader: " << g_shader_file << "\n";
+            if (!geo_shader_file.is_open())
+            {
+                std::cerr << "Failed to open geometry shader: " << g_shader_file
+                          << "\n";
                 std::exit(-1);
             }
 
