@@ -41,7 +41,7 @@ void gc::GameLevel::draw(SpriteRenderer& renderer)
 {
     for (GameObject& brick : bricks)
     {
-        if (!brick.destroyed())
+        if (!brick.destroyed_)
         {
             brick.draw(renderer);
         }
@@ -52,7 +52,7 @@ bool gc::GameLevel::is_completed()
 {
     for (GameObject& brick : bricks)
     {
-        if (!brick.is_solid() && !brick.destroyed())
+        if (!brick.is_solid_ && !brick.destroyed_)
         {
             return false;
         }
@@ -84,7 +84,7 @@ void gc::GameLevel::init(const std::vector<std::vector<u32>>& tile_data,
                                 ResourceManager::get_texture("indestructible_block"),
                                 glm::vec3{ 0.8, 0.8f, 0.7f } };
 
-                obj.set_is_solid(true);
+                obj.is_solid_ = true;
                 bricks.push_back(obj);
             }
             else if (tile_data[y][x] > 1) // destructible

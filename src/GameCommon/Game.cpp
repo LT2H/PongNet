@@ -76,13 +76,13 @@ void gc::Game::process_input(float dt)
         float velocity{ PLAYER_VELOCITY * dt };
         //move player's paddle
         if (keys[GLFW_KEY_A]) {
-            if (player->pos().x >= 0.0f) {
-                player->decrease_pos_x(velocity);
+            if (player->pos_.x >= 0.0f) {
+                player->pos_.x -= velocity;
             }
         }
         if (keys[GLFW_KEY_D]) {
-            if (player->pos().x <= width_ - player->size().x) {
-                player->increase_pos_x(velocity);
+            if (player->pos_.x <= width_ - player->size_.x) {
+                player->pos_.x += velocity;
             }
         }
     }
