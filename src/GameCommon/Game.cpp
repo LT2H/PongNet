@@ -1,9 +1,19 @@
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/Game.h>
 #include <GameCommon/SpriteRenderer.h>
+#include <GameCommon/Common.h>
+#include <GameCommon/BallObject.h>
 
 constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
 constexpr float PLAYER_VELOCITY{ 500.0f };
+
+// Initial velocity of the Ball
+constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
+
+// Radius of the ball object
+constexpr float BALL_RADIUS{ 12.5f };
+
+gc::BallObject* ball;
 
 gc::GameObject* player;
 
@@ -67,6 +77,14 @@ void gc::Game::init()
     player = new GameObject{ player_pos,
                              PLAYER_SIZE,
                              ResourceManager::get_texture("paddle") };
+
+    glm::vec2 ball_pos{ player_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
+                                                -BALL_RADIUS * 2.0f } };
+
+    ball = new BallObject{ ball_pos,
+                           BALL_RADIUS,
+                           INITIAL_BALL_VELOCITY,
+                           ResourceManager::get_texture("face") };
 }
 
 void gc::Game::process_input(float dt)
@@ -74,21 +92,37 @@ void gc::Game::process_input(float dt)
     if (state == GameState::GAME_ACTIVE)
     {
         float velocity{ PLAYER_VELOCITY * dt };
-        //move player's paddle
-        if (keys[GLFW_KEY_A]) {
-            if (player->pos_.x >= 0.0f) {
+        // move player's paddle
+        if (keys[GLFW_KEY_A])
+        {
+            if (player->pos_.x >= 0.0f)
+            {
                 player->pos_.x -= velocity;
+                if (ball->stuck_)
+                {
+                    ball->pos_.x -= velocity;
+                }
             }
         }
-        if (keys[GLFW_KEY_D]) {
-            if (player->pos_.x <= width_ - player->size_.x) {
+        if (keys[GLFW_KEY_D])
+        {
+            if (player->pos_.x <= width_ - player->size_.x)
+            {
                 player->pos_.x += velocity;
+                if (ball->stuck_)
+                {
+                    ball->pos_.x += velocity;
+                }
             }
+        }
+        if (keys[GLFW_KEY_SPACE])
+        {
+            ball->stuck_ = false;
         }
     }
 }
 
-void gc::Game::update(float dt) {}
+void gc::Game::update(float dt) { ball->move(dt, width_); }
 
 void gc::Game::render()
 {
@@ -104,5 +138,6 @@ void gc::Game::render()
         levels[current_level].draw(*renderer);
 
         player->draw(*renderer);
+        ball->draw(*renderer);
     }
 }
