@@ -2,6 +2,7 @@
 
 #include "GameLevel.h"
 #include "Common.h"
+#include "GameObject.h"
 
 namespace gc
 {
@@ -25,6 +26,8 @@ class Game
 
     void render();
 
+    void do_collision();
+
     GameState state;
 
     std::array<bool, 1024> keys;
@@ -33,6 +36,8 @@ class Game
     u32 current_level{ 0 };
 
   private:
+    bool check_collision(const GameObject& one, const GameObject& two);
+
     u32 width_;
     u32 height_;
 };

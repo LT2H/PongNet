@@ -122,7 +122,14 @@ void gc::Game::process_input(float dt)
     }
 }
 
-void gc::Game::update(float dt) { ball->move(dt, width_); }
+void gc::Game::update(float dt)
+{
+    // update objects
+    ball->move(dt, width_);
+
+    // Check for collisions
+    do_collision();
+}
 
 void gc::Game::render()
 {
@@ -140,4 +147,35 @@ void gc::Game::render()
         player->draw(*renderer);
         ball->draw(*renderer);
     }
+}
+
+void gc::Game::do_collision()
+{
+    for (GameObject& box : levels[current_level].bricks)
+    {
+        if (!box.destroyed_)
+        {
+            if (check_collision(*ball, box))
+            {
+                if (!box.is_solid_)
+                {
+                    box.destroyed_ = true;
+                }
+            }
+        }
+    }
+}
+
+bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
+{
+    // collsion x-axis?
+    bool collision_x{ one.pos_.x + one.size_.x >= two.pos_.x &&
+                      two.pos_.x + two.size_.x >= one.pos_.x };
+
+    // collision y-axis?
+    bool collision_y{ one.pos_.y + one.size_.y >= two.pos_.y &&
+                      two.pos_.y + two.size_.y >= one.pos_.y };
+
+    // collision only if on both axes
+    return collision_x && collision_y;
 }
