@@ -3,6 +3,7 @@
 #include "GameLevel.h"
 #include "Common.h"
 #include "GameObject.h"
+#include "BallObject.h"
 
 namespace gc
 {
@@ -37,6 +38,8 @@ class Game
 
   private:
     bool check_collision(const GameObject& one, const GameObject& two);
+
+    bool check_collision(const BallObject& one, const GameObject& two);
 
     u32 width_;
     u32 height_;

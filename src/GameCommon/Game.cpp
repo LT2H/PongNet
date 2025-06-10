@@ -1,3 +1,4 @@
+#include "GameCommon/GameObject.h"
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/Game.h>
 #include <GameCommon/SpriteRenderer.h>
@@ -178,4 +179,24 @@ bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
 
     // collision only if on both axes
     return collision_x && collision_y;
+}
+
+bool gc::Game::check_collision(const BallObject& one, const GameObject& two)
+{
+    // get center point circle first
+    glm::vec2 center{ one.pos_ + one.radius_ };
+    // calculate AABB info (center, half-extents)
+    glm::vec2 aabb_half_extents{ two.size_.x / 2.0f, two.size_.y / 2.0f };
+    glm::vec2 aabb_center{ two.pos_.x + aabb_half_extents.x,
+                           two.pos_.y + aabb_half_extents.y };
+    // get difference vector between both centers
+    glm::vec2 difference{ center - aabb_center };
+    glm::vec2 clamped{ glm::clamp(
+        difference, -aabb_half_extents, aabb_half_extents) };
+    // add clamped value to AABB_center and we get the value of box closest to circle
+    glm::vec2 closest{ aabb_center + clamped };
+    // retrieve vector between center circle and closest point AABB and check if
+    // length <= radius
+    difference = closest - center;
+    return glm::length(difference) < one.radius_;
 }
