@@ -4,6 +4,8 @@
 #include "Common.h"
 #include "GameObject.h"
 #include "BallObject.h"
+#include "glm/fwd.hpp"
+#include <tuple>
 
 namespace gc
 {
@@ -13,6 +15,17 @@ enum class GameState
     GAME_MENU,
     GAME_WIN,
 };
+
+enum class Direction
+{
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT,
+};
+
+using Collision = std::tuple<bool, Direction, glm::vec2>;
+
 class Game
 {
   public:
@@ -24,6 +37,10 @@ class Game
     void process_input(float dt);
 
     void update(float dt);
+    
+    void reset_level();
+    
+    void reset_player();
 
     void render();
 
@@ -39,7 +56,9 @@ class Game
   private:
     bool check_collision(const GameObject& one, const GameObject& two);
 
-    bool check_collision(const BallObject& one, const GameObject& two);
+    Collision check_collision(const BallObject& one, const GameObject& two);
+
+    Direction vector_direction(const glm::vec2& target);
 
     u32 width_;
     u32 height_;
