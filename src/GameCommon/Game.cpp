@@ -4,6 +4,7 @@
 #include <GameCommon/SpriteRenderer.h>
 #include <GameCommon/Common.h>
 #include <GameCommon/BallObject.h>
+#include <GameCommon/ParticleGenerator.h>
 
 constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
 constexpr float PLAYER_VELOCITY{ 500.0f };
@@ -20,18 +21,29 @@ gc::GameObject* player;
 
 gc::SpriteRenderer* renderer;
 
+gc::ParticleGenerator* particles;
+
 gc::Game::Game(u32 width, u32 height)
     : state{ GameState::GAME_ACTIVE }, keys{}, width_{ width }, height_{ height }
 {
 }
 
-gc::Game::~Game() { delete renderer; }
+gc::Game::~Game()
+{
+    delete renderer;
+    delete player;
+    delete ball;
+    delete particles;
+}
 
 void gc::Game::init()
 {
     // Load shaders
     gc::ResourceManager::load_shader(
-        "res/shaders/shader.vert", "res/shaders/shader.frag", "", "sprite");
+        "res/shaders/sprite.vert", "res/shaders/sprite.frag", "", "sprite");
+
+    gc::ResourceManager::load_shader(
+        "res/shaders/particle.vert", "res/shaders/particle.frag", "", "particle");
 
     // configure shaders
     glm::mat4 projection{ glm::ortho(0.0f,
@@ -42,11 +54,11 @@ void gc::Game::init()
                                      1.0f) };
 
     gc::ResourceManager::get_shader("sprite").use().set_integer("image", 0);
-
     gc::ResourceManager::get_shader("sprite").set_matrix4("projection", projection);
 
-    // Set render-specific controls
-    renderer = new gc::SpriteRenderer{ gc::ResourceManager::get_shader("sprite") };
+    gc::ResourceManager::get_shader("particle").use().set_integer("sprite", 0);
+    gc::ResourceManager::get_shader("particle")
+        .set_matrix4("projection", projection);
 
     // Load textures
     gc::ResourceManager::load_texture("res/textures/awesomeface.png", true, "face");
@@ -56,6 +68,15 @@ void gc::Game::init()
     gc::ResourceManager::load_texture(
         "res/textures/indestructible_block.png", false, "indestructible_block");
     gc::ResourceManager::load_texture("res/textures/paddle.png", true, "paddle");
+
+    gc::ResourceManager::load_texture("res/textures/particle.png", true, "particle");
+
+    // Set render-specific controls
+    renderer = new gc::SpriteRenderer{ gc::ResourceManager::get_shader("sprite") };
+    particles =
+        new gc::ParticleGenerator{ gc::ResourceManager::get_shader("particle"),
+                                   gc::ResourceManager::get_texture("particle"),
+                                   500 };
 
     // Load levels
     GameLevel one;
@@ -72,6 +93,7 @@ void gc::Game::init()
     levels.push_back(three);
     levels.push_back(four);
 
+    // configure game objects
     glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
                                      height_ - PLAYER_SIZE.y } };
 
@@ -127,9 +149,12 @@ void gc::Game::update(float dt)
 {
     // update objects
     ball->move(dt, width_);
-
+    
     // Check for collisions
     do_collision();
+    
+    // update particles
+    particles->update(dt, *ball, 2, glm::vec2{ ball->radius_ / 2.0f });
 
     if (ball->pos_.y >= height_)
     { // did ball reach bottom edge?
@@ -184,6 +209,7 @@ void gc::Game::render()
         levels[current_level].draw(*renderer);
 
         player->draw(*renderer);
+        particles->draw();
         ball->draw(*renderer);
     }
 }
