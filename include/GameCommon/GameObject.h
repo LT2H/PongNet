@@ -4,7 +4,6 @@
 #include "SpriteRenderer.h"
 
 #include "Common.h"
-#include "glm/fwd.hpp"
 
 // Container object for holding all state relevant for a single
 // game object entity. Each object in the game likely needs the
