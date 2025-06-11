@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <array>
 #include <map>
 #include <unordered_map>
@@ -27,6 +28,7 @@
 #include <sstream>
 #include <exception>
 #include <tuple>
+#include <stdexcept>
 
 using u8  = std::uint8_t;
 using u16 = std::uint16_t;
