@@ -5,6 +5,7 @@
 #include <GameCommon/Common.h>
 #include <GameCommon/BallObject.h>
 #include <GameCommon/ParticleGenerator.h>
+#include <GameCommon/PostProcessor.h>
 
 constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
 constexpr float PLAYER_VELOCITY{ 500.0f };
@@ -15,6 +16,8 @@ constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
 // Radius of the ball object
 constexpr float BALL_RADIUS{ 12.5f };
 
+float shake_time{ 0.0f };
+
 gc::BallObject* ball;
 
 gc::GameObject* player;
@@ -22,6 +25,8 @@ gc::GameObject* player;
 gc::SpriteRenderer* renderer;
 
 gc::ParticleGenerator* particles;
+
+gc::PostProcessor* effects;
 
 gc::Game::Game(u32 width, u32 height)
     : state{ GameState::GAME_ACTIVE }, keys{}, width_{ width }, height_{ height }
@@ -41,9 +46,10 @@ void gc::Game::init()
     // Load shaders
     gc::ResourceManager::load_shader(
         "res/shaders/sprite.vert", "res/shaders/sprite.frag", "", "sprite");
-
     gc::ResourceManager::load_shader(
         "res/shaders/particle.vert", "res/shaders/particle.frag", "", "particle");
+        gc::ResourceManager::load_shader(
+            "res/shaders/postprocessing.vert", "res/shaders/postprocessing.frag", "", "postprocessing");
 
     // configure shaders
     glm::mat4 projection{ glm::ortho(0.0f,
@@ -77,6 +83,9 @@ void gc::Game::init()
         new gc::ParticleGenerator{ gc::ResourceManager::get_shader("particle"),
                                    gc::ResourceManager::get_texture("particle"),
                                    500 };
+    effects = new PostProcessor{ ResourceManager::get_shader("postprocessing"),
+                                 width_,
+                                 height_ };
 
     // Load levels
     GameLevel one;
@@ -149,12 +158,22 @@ void gc::Game::update(float dt)
 {
     // update objects
     ball->move(dt, width_);
-    
+
     // Check for collisions
     do_collision();
-    
+
     // update particles
     particles->update(dt, *ball, 2, glm::vec2{ ball->radius_ / 2.0f });
+
+    // reduce shake time
+    if (shake_time > 0.0f)
+    {
+        shake_time -= dt;
+        if (shake_time <= 0.0f)
+        {
+            effects->shake_ = false;
+        }
+    }
 
     if (ball->pos_.y >= height_)
     { // did ball reach bottom edge?
@@ -199,6 +218,7 @@ void gc::Game::render()
 {
     if (state == GameState::GAME_ACTIVE)
     {
+        effects->begin_render();
         // Draw background
         renderer->draw_sprite(gc::ResourceManager::get_texture("background"),
                               glm::vec2(0.0f, 0.0f),
@@ -211,6 +231,9 @@ void gc::Game::render()
         player->draw(*renderer);
         particles->draw();
         ball->draw(*renderer);
+
+        effects->end_render();
+        effects->render(glfwGetTime());
     }
 }
 
@@ -221,12 +244,17 @@ void gc::Game::do_collision()
         if (!box.destroyed_)
         {
             Collision collision{ check_collision(*ball, box) };
-            if (std::get<0>(collision))
-            { // if collision is true
+            if (std::get<0>(collision)) // if collision is true
+            {
                 // destroy block if not solid
                 if (!box.is_solid_)
                 {
                     box.destroyed_ = true;
+                }
+                else
+                { // if block is solid, enable shake effect
+                    shake_time      = 0.05f;
+                    effects->shake_ = true;
                 }
 
                 // collision resolution
