@@ -3,7 +3,6 @@
 #include "Shader.h"
 #include "Common.h"
 #include "Texture.h"
-#include "glm/fwd.hpp"
 
 namespace gc
 {
