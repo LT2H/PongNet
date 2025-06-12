@@ -125,5 +125,5 @@ void gc::ParticleGenerator::respawn_particle(Particle& particle, GameObject& obj
     particle.pos      = object.pos_ + random + offset;
     particle.color    = glm::vec4(random_color, random_color, random_color, 1.0f);
     particle.life     = 1.0f;
-    particle.velocity = object.velocity_ * 1.0f;
+    particle.velocity = object.velocity_ * 0.1f;
 }
