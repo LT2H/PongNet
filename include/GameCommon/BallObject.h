@@ -11,6 +11,8 @@ class BallObject : public GameObject
   public: // ball state
     float radius_;
     bool stuck_;
+    bool sticky_;
+    bool passthrough_;
 
     explicit BallObject();
     BallObject(const glm::vec2& pos, float radius, const glm::vec2& velocity,

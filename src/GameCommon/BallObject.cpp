@@ -2,7 +2,11 @@
 #include <GameCommon/Common.h>
 #include "GameCommon/GameObject.h"
 
-gc::BallObject::BallObject() : GameObject{}, radius_{ 12.5f }, stuck_{ true } {}
+gc::BallObject::BallObject()
+    : GameObject{}, radius_{ 12.5f }, stuck_{ true }, sticky_{ false },
+      passthrough_{ false }
+{
+}
 
 gc::BallObject::BallObject(const glm::vec2& pos, float radius,
                            const glm::vec2& velocity, const Texture2D& sprite)
@@ -11,13 +15,13 @@ gc::BallObject::BallObject(const glm::vec2& pos, float radius,
                   sprite,
                   glm::vec3{ 1.0f },
                   velocity },
-      radius_{ radius }, stuck_{ true }
+      radius_{ radius }, stuck_{ true }, sticky_{ false }, passthrough_{ false }
 {
 }
 
 glm::vec2 gc::BallObject::move(float dt, u32 window_width)
 {
-    // if not stuck to player board 
+    // if not stuck to player board
     if (!stuck_)
     {
         // move the ball
@@ -47,7 +51,9 @@ glm::vec2 gc::BallObject::move(float dt, u32 window_width)
 // resets the ball to initial stuck position (if ball is outside window bounds)
 void gc::BallObject::reset(const glm::vec2& position, const glm::vec2& velocity)
 {
-    pos_      = position;
-    velocity_ = velocity;
-    stuck_    = true;
+    pos_         = position;
+    velocity_    = velocity;
+    stuck_       = true;
+    sticky_      = false;
+    passthrough_ = false;
 }

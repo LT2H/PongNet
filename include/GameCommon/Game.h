@@ -1,11 +1,12 @@
 #pragma once
 
+#include "GameCommon/GameObject.h"
 #include "GameLevel.h"
 #include "Common.h"
 #include "GameObject.h"
 #include "BallObject.h"
-#include "glm/fwd.hpp"
-#include <tuple>
+#include "PowerUp.h"
+
 
 namespace gc
 {
@@ -37,21 +38,27 @@ class Game
     void process_input(float dt);
 
     void update(float dt);
-    
+
     void reset_level();
-    
+
     void reset_player();
 
     void render();
 
-    void do_collision();
+    void do_collisions();
 
-    GameState state;
+    void spawn_powerups(GameObject& block);
+    void active_powerup(const PowerUp& powerup);
+    void update_powerups(float dt);
 
-    std::array<bool, 1024> keys;
+    GameState state_;
 
-    std::vector<GameLevel> levels{};
-    u32 current_level{ 0 };
+    std::array<bool, 1024> keys_;
+
+    std::vector<GameLevel> levels_{};
+    u32 current_level_{ 0 };
+
+    std::vector<PowerUp> power_ups_{};
 
   private:
     bool check_collision(const GameObject& one, const GameObject& two);
