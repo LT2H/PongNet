@@ -9,6 +9,8 @@
 
 #include <stb/stb_image.h>
 
+#include <miniaudio.h>
+
 #include <iostream>
 #include <memory>
 #include <thread>

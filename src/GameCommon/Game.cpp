@@ -28,6 +28,10 @@ gc::ParticleGenerator* particles;
 
 gc::PostProcessor* effects;
 
+// Audio
+ma_result result{};
+ma_engine engine{};
+
 gc::Game::Game(u32 width, u32 height)
     : state_{ GameState::GAME_ACTIVE }, keys_{}, width_{ width }, height_{ height }
 {
@@ -39,6 +43,7 @@ gc::Game::~Game()
     delete player;
     delete ball;
     delete particles;
+    ma_engine_uninit(&engine);
 }
 
 void gc::Game::init()
@@ -131,6 +136,15 @@ void gc::Game::init()
                            BALL_RADIUS,
                            INITIAL_BALL_VELOCITY,
                            ResourceManager::get_texture("face") };
+
+    // Main Menu theme
+    result = ma_engine_init(nullptr, &engine);
+    if (result != MA_SUCCESS)
+    {
+        std::cerr << "Failed to initialize audio\n";
+        return;
+    }
+    ma_engine_play_sound(&engine, "res/audio/breakout.mp3", nullptr);
 }
 
 void gc::Game::process_input(float dt)
@@ -285,11 +299,13 @@ void gc::Game::do_collisions()
                 {
                     box.destroyed_ = true;
                     spawn_powerups(box);
+                    ma_engine_play_sound(&engine, "res/audio/bleep.mp3", nullptr);
                 }
                 else
                 { // if block is solid, enable shake effect
                     shake_time      = 0.05f;
                     effects->shake_ = true;
+                    ma_engine_play_sound(&engine, "res/audio/solid.mp3", nullptr);
                 }
 
                 // collision resolution
@@ -351,6 +367,7 @@ void gc::Game::do_collisions()
                 active_powerup(powerup);
                 powerup.destroyed_ = true;
                 powerup.activated_ = true;
+                ma_engine_play_sound(&engine, "res/audio/powerup.wav", nullptr);
             }
         }
     }
@@ -376,6 +393,8 @@ void gc::Game::do_collisions()
             glm::normalize(ball->velocity_) * glm::length(old_velocity);
 
         ball->stuck_ = ball->sticky_;
+
+        ma_engine_play_sound(&engine, "res/audio/bleep.wav", nullptr);
     }
 }
 
