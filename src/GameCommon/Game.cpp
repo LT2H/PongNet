@@ -254,7 +254,7 @@ void gc::Game::render()
         player->draw(*renderer);
 
         // NO
-        for (auto& powerup : power_ups_)
+        for (auto& powerup : powerups_)
         {
             if (!powerup.destroyed_)
             {
@@ -335,22 +335,22 @@ void gc::Game::do_collisions()
         }
     }
     // also check collisions on PowerUps and if so, activate them
-    for (PowerUp& power_up : power_ups_)
+    for (PowerUp& powerup : powerups_)
     {
-        if (!power_up.destroyed_)
+        if (!powerup.destroyed_)
         {
             // first check if powerup passed bottom edge, if so: keep as inactive and
             // destroy
-            if (power_up.pos_.y >= height_)
+            if (powerup.pos_.y >= height_)
             {
-                power_up.destroyed_ = true;
+                powerup.destroyed_ = true;
             }
-            if (check_collision(*player, power_up))
+            if (check_collision(*player, powerup))
             {
                 // collided with player, now active powerup
-                active_powerup(power_up);
-                power_up.destroyed_ = true;
-                power_up.activated_ = true;
+                active_powerup(powerup);
+                powerup.destroyed_ = true;
+                powerup.activated_ = true;
             }
         }
     }
@@ -389,7 +389,7 @@ void gc::Game::spawn_powerups(GameObject& block)
 {
     if (should_spawn(75)) // 1 in 75 chance
     {
-        power_ups_.emplace_back(
+        powerups_.emplace_back(
             PowerUp{ "speed",
                      glm::vec3{ 0.5f, 0.5f, 1.0f },
                      0.0f, // here a duration of 0.0f means its duration is infinite
@@ -398,46 +398,46 @@ void gc::Game::spawn_powerups(GameObject& block)
     }
     if (should_spawn(75))
     {
-        power_ups_.emplace_back(
-            PowerUp{ "speed",
-                     glm::vec3{ 0.5f, 0.5f, 1.0f },
-                     0.0f,
+        powerups_.emplace_back(
+            PowerUp{ "sticky",
+                     glm::vec3{ 1.0f, 0.5f, 1.0f },
+                     20.0f,
                      block.pos_,
                      ResourceManager::get_texture("powerup_sticky") });
     }
     if (should_spawn(75))
     {
-        power_ups_.emplace_back(
-            PowerUp{ "speed",
-                     glm::vec3{ 0.5f, 0.5f, 1.0f },
-                     0.0f,
+        powerups_.emplace_back(
+            PowerUp{ "passthrough",
+                     glm::vec3{ 0.5f, 1.0f, 0.5f },
+                     10.0f,
                      block.pos_,
                      ResourceManager::get_texture("powerup_passthrough") });
     }
     if (should_spawn(75))
     {
-        power_ups_.emplace_back(
-            PowerUp{ "speed",
-                     glm::vec3{ 0.5f, 0.5f, 1.0f },
+        powerups_.emplace_back(
+            PowerUp{ "pad-size-increase",
+                     glm::vec3{ 1.0f, 0.6f, 0.4 },
                      0.0f,
                      block.pos_,
                      ResourceManager::get_texture("powerup_increase") });
     }
-    if (should_spawn(15))
+    if (should_spawn(15)) // Negative powerups should spawn more often
     {
-        power_ups_.emplace_back(
-            PowerUp{ "speed",
-                     glm::vec3{ 0.5f, 0.5f, 1.0f },
-                     0.0f,
+        powerups_.emplace_back(
+            PowerUp{ "confuse",
+                     glm::vec3{ 1.0f, 0.3f, 0.3f },
+                     15.0f,
                      block.pos_,
                      ResourceManager::get_texture("powerup_confuse") });
     }
     if (should_spawn(15))
     {
-        power_ups_.emplace_back(
-            PowerUp{ "speed",
-                     glm::vec3{ 0.5f, 0.5f, 1.0f },
-                     0.0f,
+        powerups_.emplace_back(
+            PowerUp{ "chaos",
+                     glm::vec3{ 0.9f, 0.25f, 0.25f },
+                     15.0f,
                      block.pos_,
                      ResourceManager::get_texture("powerup_chaos") });
     }
@@ -496,45 +496,45 @@ bool is_other_powerup_active(std::span<gc::PowerUp> powerups, std::string_view t
 
 void gc::Game::update_powerups(float dt)
 {
-    for (auto& power_up : power_ups_)
+    for (auto& powerup : powerups_)
     {
-        power_up.pos_ += power_up.velocity_ * dt;
-        if (power_up.activated_)
+        powerup.pos_ += powerup.velocity_ * dt;
+        if (powerup.activated_)
         {
-            power_up.duration_ -= dt;
+            powerup.duration_ -= dt;
 
-            if (power_up.duration_ <= 0.0f)
+            if (powerup.duration_ <= 0.0f)
             {
                 // remove powerup from list (will later be removed)
-                power_up.activated_ = false;
+                powerup.activated_ = false;
                 // deactive effects
-                if (power_up.type_ == "sticky")
+                if (powerup.type_ == "sticky")
                 {
-                    if (!is_other_powerup_active(power_ups_, "sticky"))
+                    if (!is_other_powerup_active(powerups_, "sticky"))
                     { // only reset if no other PowerUp of type sticky is active
                         ball->sticky_  = false;
                         player->color_ = glm::vec3{ 1.0f };
                     }
                 }
-                else if (power_up.type_ == "pass-through")
+                else if (powerup.type_ == "pass-through")
                 {
-                    if (!is_other_powerup_active(power_ups_, "pass-through"))
+                    if (!is_other_powerup_active(powerups_, "pass-through"))
                     {
                         ball->passthrough_ = false;
                         ball->color_       = glm::vec3{ 1.0f };
                     }
                 }
-                else if (power_up.type_ == "confuse")
+                else if (powerup.type_ == "confuse")
                 {
-                    if (!is_other_powerup_active(power_ups_, "confuse"))
+                    if (!is_other_powerup_active(powerups_, "confuse"))
                     {
                         ball->passthrough_ = false;
                         ball->color_       = glm::vec3{ 1.0f };
                     }
                 }
-                else if (power_up.type_ == "chaos")
+                else if (powerup.type_ == "chaos")
                 {
-                    if (!is_other_powerup_active(power_ups_, "chaos"))
+                    if (!is_other_powerup_active(powerups_, "chaos"))
                     {
                         ball->passthrough_ = false;
                         ball->color_       = glm::vec3{ 1.0f };
@@ -547,11 +547,12 @@ void gc::Game::update_powerups(float dt)
     // off the map or finished)
     // Note we use a lambda expression to remove each PowerUp which is destroyed and
     // not activated
-    power_ups_.erase(
-        std::remove_if(power_ups_.begin(),
-                       power_ups_.end(),
-                       [](const PowerUp& power_up)
-                       { return power_up.destroyed_ && !power_up.activated_; }), power_ups_.end());
+    powerups_.erase(
+        std::remove_if(powerups_.begin(),
+                       powerups_.end(),
+                       [](const PowerUp& powerup)
+                       { return powerup.destroyed_ && !powerup.activated_; }),
+        powerups_.end());
 }
 
 bool gc::Game::check_collision(const GameObject& one, const GameObject& two)

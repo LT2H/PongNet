@@ -58,7 +58,7 @@ class Game
     std::vector<GameLevel> levels_{};
     u32 current_level_{ 0 };
 
-    std::vector<PowerUp> power_ups_{};
+    std::vector<PowerUp> powerups_{};
 
   private:
     bool check_collision(const GameObject& one, const GameObject& two);
