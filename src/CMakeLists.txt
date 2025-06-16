@@ -20,7 +20,7 @@ target_compile_features(stb PUBLIC cxx_std_20)
 add_library(GameCommon GameCommon/Game.cpp GameCommon/ResourceManager.cpp GameCommon/Shader.cpp GameCommon/Texture.cpp GameCommon/SpriteRenderer.cpp GameCommon/GameObject.cpp GameCommon/GameLevel.cpp GameCommon/BallObject.cpp GameCommon/ParticleGenerator.cpp GameCommon/PostProcessor.cpp)
 target_include_directories(GameCommon PUBLIC ../include)
 
-# This depends on glm, stb, glad, glfw
-target_link_libraries(GameCommon PRIVATE glm stb glad glfw)
+# This depends on...
+target_link_libraries(GameCommon PRIVATE glm stb glad glfw miniaudio)
 
 target_compile_features(GameCommon PUBLIC cxx_std_20)

@@ -28,6 +28,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# miniaudio
+FetchContent_Declare(
+    miniaudio
+    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+    GIT_TAG        0.11.22  # or latest stable
+)
+FetchContent_MakeAvailable(miniaudio)
+
 add_subdirectory(apps)
 
 add_subdirectory(src)

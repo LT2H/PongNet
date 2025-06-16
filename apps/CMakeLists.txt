@@ -7,6 +7,7 @@ target_link_libraries(App
         glfw
         glm
         stb
+        miniaudio
         GameCommon
 )
 
