@@ -36,6 +36,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(miniaudio)
 
+# Freetype
+FetchContent_Declare(
+    freetype
+    URL https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.gz
+)
+FetchContent_MakeAvailable(freetype)
+
 add_subdirectory(apps)
 
 add_subdirectory(src)

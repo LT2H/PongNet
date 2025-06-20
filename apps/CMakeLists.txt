@@ -9,6 +9,7 @@ target_link_libraries(App
         stb
         miniaudio
         GameCommon
+        freetype
 )
 
 # Optional if using Windows APIs directly (likely if you're using GLFW)

@@ -21,6 +21,6 @@ add_library(GameCommon GameCommon/Game.cpp GameCommon/ResourceManager.cpp GameCo
 target_include_directories(GameCommon PUBLIC ../include)
 
 # This depends on...
-target_link_libraries(GameCommon PRIVATE glm stb glad glfw miniaudio)
+target_link_libraries(GameCommon PRIVATE glm stb glad glfw miniaudio freetype)
 
 target_compile_features(GameCommon PUBLIC cxx_std_20)

@@ -7,6 +7,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <stb/stb_image.h>
 
 #include <miniaudio.h>
