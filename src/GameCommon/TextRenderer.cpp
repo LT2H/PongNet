@@ -6,7 +6,7 @@ gc::TextRender::TextRender(u32 width, u32 height)
 {
     // load and configure shader
     shader_ =
-        ResourceManager::load_shader("text_2d.vert", "text_2d.frag", "", "text");
+        ResourceManager::load_shader("res/shaders/text_2d.vert", "res/shaders/text_2d.frag", "", "text");
 
     shader_.set_matrix4(
         "projection",
