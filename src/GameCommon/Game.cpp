@@ -161,12 +161,12 @@ void gc::Game::process_input(float dt)
     {
         if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
         {
-            state_ = GameState::GAME_ACTIVE;
+            state_                          = GameState::GAME_ACTIVE;
             keys_processed_[GLFW_KEY_ENTER] = true;
         }
         if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
         {
-            current_level_ = (current_level_ + 1) % 4;
+            current_level_              = (current_level_ + 1) % 4;
             keys_processed_[GLFW_KEY_W] = true;
         }
         if (keys_[GLFW_KEY_S] && !keys_processed_[GLFW_KEY_S])
@@ -180,6 +180,16 @@ void gc::Game::process_input(float dt)
                 current_level_ = 3;
             }
             keys_processed_[GLFW_KEY_S] = true;
+        }
+    }
+
+    if (state_ == GameState::GAME_WIN)
+    {
+        if (keys_[GLFW_KEY_ENTER])
+        {
+            keys_processed_[GLFW_KEY_ENTER] = true;
+            effects->chaos_                 = false;
+            state_                          = GameState::GAME_MENU;
         }
     }
 
@@ -214,6 +224,7 @@ void gc::Game::process_input(float dt)
             ball->stuck_ = false;
         }
     }
+
 }
 
 void gc::Game::update(float dt)
@@ -250,6 +261,15 @@ void gc::Game::update(float dt)
             state_ = GameState::GAME_MENU;
         }
         reset_player();
+    }
+
+    // check win condition
+    if (state_ == GameState::GAME_ACTIVE && levels_[current_level_].is_completed())
+    {
+        reset_player();
+        reset_level();
+        effects->chaos_ = true;
+        state_          = GameState::GAME_WIN;
     }
 }
 
@@ -296,7 +316,7 @@ void gc::Game::reset_player()
 
 void gc::Game::render()
 {
-    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU)
+    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU || state_ == GameState::GAME_WIN)
     {
         effects->begin_render();
         // Draw background
@@ -337,6 +357,17 @@ void gc::Game::render()
         text->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
         text->render_text(
             "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
+    }
+
+    if (state_ == GameState::GAME_WIN)
+    {
+        text->render_text(
+            "YOU WON!", 320.0, height_ / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0));
+        text->render_text("Press ENTER to retry or ESC to quit",
+                          130.0,
+                          height_ / 2,
+                          1.0,
+                          glm::vec3(1.0, 1.0, 0.0));
     }
 }
 
