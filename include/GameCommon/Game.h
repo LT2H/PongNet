@@ -54,11 +54,14 @@ class Game
     GameState state_;
 
     std::array<bool, 1024> keys_;
+    std::array<bool, 1024> keys_processed_;    
 
     std::vector<GameLevel> levels_{};
     u32 current_level_{ 0 };
 
     std::vector<PowerUp> powerups_{};
+
+    u32 lives_{ 3 };
 
   private:
     bool check_collision(const GameObject& one, const GameObject& two);

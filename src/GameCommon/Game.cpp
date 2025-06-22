@@ -1,3 +1,4 @@
+#include <GameCommon/TextRenderer.h>
 #include <GameCommon/GameObject.h>
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/Game.h>
@@ -28,12 +29,14 @@ gc::ParticleGenerator* particles;
 
 gc::PostProcessor* effects;
 
+gc::TextRender* text;
+
 // Audio
 ma_result result{};
 ma_engine engine{};
 
 gc::Game::Game(u32 width, u32 height)
-    : state_{ GameState::GAME_ACTIVE }, keys_{}, width_{ width }, height_{ height }
+    : state_{ GameState::GAME_MENU }, keys_{}, width_{ width }, height_{ height }
 {
 }
 
@@ -42,7 +45,9 @@ gc::Game::~Game()
     delete renderer;
     delete player;
     delete ball;
+    delete effects;
     delete particles;
+    delete text;
     ma_engine_uninit(&engine);
 }
 
@@ -137,6 +142,9 @@ void gc::Game::init()
                            INITIAL_BALL_VELOCITY,
                            ResourceManager::get_texture("face") };
 
+    text = new TextRender{ width_, height_ };
+    text->load("res/fonts/OCRAEXT.TTF", 24);
+
     // Main Menu theme
     result = ma_engine_init(nullptr, &engine);
     if (result != MA_SUCCESS)
@@ -149,6 +157,32 @@ void gc::Game::init()
 
 void gc::Game::process_input(float dt)
 {
+    if (state_ == GameState::GAME_MENU)
+    {
+        if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+        {
+            state_ = GameState::GAME_ACTIVE;
+            keys_processed_[GLFW_KEY_ENTER] = true;
+        }
+        if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
+        {
+            current_level_ = (current_level_ + 1) % 4;
+            keys_processed_[GLFW_KEY_W] = true;
+        }
+        if (keys_[GLFW_KEY_S] && !keys_processed_[GLFW_KEY_S])
+        {
+            if (current_level_ > 0)
+            {
+                --current_level_;
+            }
+            else
+            {
+                current_level_ = 3;
+            }
+            keys_processed_[GLFW_KEY_S] = true;
+        }
+    }
+
     if (state_ == GameState::GAME_ACTIVE)
     {
         float velocity{ PLAYER_VELOCITY * dt };
@@ -205,9 +239,16 @@ void gc::Game::update(float dt)
         }
     }
 
+    // check loss condition
     if (ball->pos_.y >= height_)
-    { // did ball reach bottom edge?
-        reset_level();
+    {
+        --lives_;
+
+        if (lives_ == 0)
+        {
+            reset_level();
+            state_ = GameState::GAME_MENU;
+        }
         reset_player();
     }
 }
@@ -230,6 +271,8 @@ void gc::Game::reset_level()
     {
         levels_[3].load("res/levels/four.lvl", width_, height_ / 2);
     }
+
+    lives_ = 3;
 }
 
 void gc::Game::reset_player()
@@ -253,7 +296,7 @@ void gc::Game::reset_player()
 
 void gc::Game::render()
 {
-    if (state_ == GameState::GAME_ACTIVE)
+    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU)
     {
         effects->begin_render();
         // Draw background
@@ -282,6 +325,18 @@ void gc::Game::render()
 
         effects->end_render();
         effects->render(glfwGetTime());
+
+        // Show lives
+        std::stringstream ss;
+        ss << lives_;
+        text->render_text("Lives" + ss.str(), 5.0f, 5.0f, 1.0f);
+    }
+
+    if (state_ == GameState::GAME_MENU)
+    {
+        text->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
+        text->render_text(
+            "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
     }
 }
 
