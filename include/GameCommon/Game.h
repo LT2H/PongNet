@@ -1,12 +1,13 @@
 #pragma once
 
-#include "GameCommon/GameObject.h"
 #include "GameLevel.h"
 #include "Common.h"
 #include "GameObject.h"
 #include "BallObject.h"
 #include "PowerUp.h"
-
+#include "ParticleGenerator.h"
+#include "PostProcessor.h"
+#include "TextRenderer.h"
 
 namespace gc
 {
@@ -54,7 +55,7 @@ class Game
     GameState state_;
 
     std::array<bool, 1024> keys_;
-    std::array<bool, 1024> keys_processed_;    
+    std::array<bool, 1024> keys_processed_;
 
     std::vector<GameLevel> levels_{};
     u32 current_level_{ 0 };
@@ -72,5 +73,21 @@ class Game
 
     u32 width_;
     u32 height_;
+
+    std::unique_ptr<BallObject> ball_;
+
+    std::unique_ptr<GameObject> player_;
+
+    std::unique_ptr<SpriteRenderer> renderer_;
+
+    std::unique_ptr<ParticleGenerator> particles_;
+
+    std::unique_ptr<PostProcessor> effects_;
+
+    std::unique_ptr<TextRender> text_;
+
+    // Audio
+    ma_result result_{};
+    ma_engine engine_{};
 };
 } // namespace gc

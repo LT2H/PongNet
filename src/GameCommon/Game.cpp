@@ -8,48 +8,23 @@
 #include <GameCommon/ParticleGenerator.h>
 #include <GameCommon/PostProcessor.h>
 
-constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
-constexpr float PLAYER_VELOCITY{ 500.0f };
+glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
+float PLAYER_VELOCITY{ 500.0f };
 
 // Initial velocity of the Ball
-constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
+glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
 
-// Radius of the ball object
-constexpr float BALL_RADIUS{ 12.5f };
+// Radius of the ball_ object
+float BALL_RADIUS{ 12.5f };
 
 float shake_time{ 0.0f };
-
-gc::BallObject* ball;
-
-gc::GameObject* player;
-
-gc::SpriteRenderer* renderer;
-
-gc::ParticleGenerator* particles;
-
-gc::PostProcessor* effects;
-
-gc::TextRender* text;
-
-// Audio
-ma_result result{};
-ma_engine engine{};
 
 gc::Game::Game(u32 width, u32 height)
     : state_{ GameState::GAME_MENU }, keys_{}, width_{ width }, height_{ height }
 {
 }
 
-gc::Game::~Game()
-{
-    delete renderer;
-    delete player;
-    delete ball;
-    delete effects;
-    delete particles;
-    delete text;
-    ma_engine_uninit(&engine);
-}
+gc::Game::~Game() { ma_engine_uninit(&engine_); }
 
 void gc::Game::init()
 {
@@ -102,14 +77,14 @@ void gc::Game::init()
         "res/textures/powerup_passthrough.png", true, "powerup_passthrough");
 
     // Set render-specific controls
-    renderer = new gc::SpriteRenderer{ gc::ResourceManager::get_shader("sprite") };
-    particles =
-        new gc::ParticleGenerator{ gc::ResourceManager::get_shader("particle"),
-                                   ResourceManager::get_texture("particle"),
-                                   500 };
-    effects = new PostProcessor{ ResourceManager::get_shader("postprocessing"),
-                                 width_,
-                                 height_ };
+    renderer_ = std::make_unique<gc::SpriteRenderer>(
+        gc::ResourceManager::get_shader("sprite"));
+    particles_ = std::make_unique<gc::ParticleGenerator>(
+        gc::ResourceManager::get_shader("particle"),
+        ResourceManager::get_texture("particle"),
+        500);
+    effects_ = std::make_unique<PostProcessor>(
+        ResourceManager::get_shader("postprocessing"), width_, height_);
 
     // Load levels
     GameLevel one;
@@ -130,29 +105,28 @@ void gc::Game::init()
     glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
                                      height_ - PLAYER_SIZE.y } };
 
-    player = new GameObject{ player_pos,
-                             PLAYER_SIZE,
-                             ResourceManager::get_texture("paddle") };
+    player_ = std::make_unique<GameObject>(
+        player_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
 
     glm::vec2 ball_pos{ player_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
                                                 -BALL_RADIUS * 2.0f } };
 
-    ball = new BallObject{ ball_pos,
+    ball_ = std::make_unique<BallObject>( ball_pos,
                            BALL_RADIUS,
                            INITIAL_BALL_VELOCITY,
-                           ResourceManager::get_texture("face") };
+                           ResourceManager::get_texture("face") );
 
-    text = new TextRender{ width_, height_ };
-    text->load("res/fonts/OCRAEXT.TTF", 24);
+    text_ = std::make_unique<TextRender>( width_, height_ );
+    text_->load("res/fonts/OCRAEXT.TTF", 24);
 
     // Main Menu theme
-    result = ma_engine_init(nullptr, &engine);
-    if (result != MA_SUCCESS)
+    result_ = ma_engine_init(nullptr, &engine_);
+    if (result_ != MA_SUCCESS)
     {
         std::cerr << "Failed to initialize audio\n";
         return;
     }
-    ma_engine_play_sound(&engine, "res/audio/breakout.mp3", nullptr);
+    ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
 }
 
 void gc::Game::process_input(float dt)
@@ -188,7 +162,7 @@ void gc::Game::process_input(float dt)
         if (keys_[GLFW_KEY_ENTER])
         {
             keys_processed_[GLFW_KEY_ENTER] = true;
-            effects->chaos_                 = false;
+            effects_->chaos_                 = false;
             state_                          = GameState::GAME_MENU;
         }
     }
@@ -196,47 +170,46 @@ void gc::Game::process_input(float dt)
     if (state_ == GameState::GAME_ACTIVE)
     {
         float velocity{ PLAYER_VELOCITY * dt };
-        // move player's paddle
+        // move player_'s paddle
         if (keys_[GLFW_KEY_A])
         {
-            if (player->pos_.x >= 0.0f)
+            if (player_->pos_.x >= 0.0f)
             {
-                player->pos_.x -= velocity;
-                if (ball->stuck_)
+                player_->pos_.x -= velocity;
+                if (ball_->stuck_)
                 {
-                    ball->pos_.x -= velocity;
+                    ball_->pos_.x -= velocity;
                 }
             }
         }
         if (keys_[GLFW_KEY_D])
         {
-            if (player->pos_.x <= width_ - player->size_.x)
+            if (player_->pos_.x <= width_ - player_->size_.x)
             {
-                player->pos_.x += velocity;
-                if (ball->stuck_)
+                player_->pos_.x += velocity;
+                if (ball_->stuck_)
                 {
-                    ball->pos_.x += velocity;
+                    ball_->pos_.x += velocity;
                 }
             }
         }
         if (keys_[GLFW_KEY_SPACE])
         {
-            ball->stuck_ = false;
+            ball_->stuck_ = false;
         }
     }
-
 }
 
 void gc::Game::update(float dt)
 {
     // update objects
-    ball->move(dt, width_);
+    ball_->move(dt, width_);
 
     // Check for collisions
     do_collisions();
 
-    // update particles
-    particles->update(dt, *ball, 2, glm::vec2{ ball->radius_ / 2.0f });
+    // update particles_
+    particles_->update(dt, *ball_, 2, glm::vec2{ ball_->radius_ / 2.0f });
 
     update_powerups(dt);
 
@@ -246,12 +219,12 @@ void gc::Game::update(float dt)
         shake_time -= dt;
         if (shake_time <= 0.0f)
         {
-            effects->shake_ = false;
+            effects_->shake_ = false;
         }
     }
 
     // check loss condition
-    if (ball->pos_.y >= height_)
+    if (ball_->pos_.y >= height_)
     {
         --lives_;
 
@@ -268,7 +241,7 @@ void gc::Game::update(float dt)
     {
         reset_player();
         reset_level();
-        effects->chaos_ = true;
+        effects_->chaos_ = true;
         state_          = GameState::GAME_WIN;
     }
 }
@@ -297,73 +270,74 @@ void gc::Game::reset_level()
 
 void gc::Game::reset_player()
 {
-    // reset player/ball stats
-    player->size_ = PLAYER_SIZE;
-    player->pos_ =
+    // reset player_/ball_ stats
+    player_->size_ = PLAYER_SIZE;
+    player_->pos_ =
         glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, height_ - PLAYER_SIZE.y };
-    ball->reset(player->pos_ + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
+    ball_->reset(player_->pos_ + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
                                           -(BALL_RADIUS * 2.0f) },
                 INITIAL_BALL_VELOCITY);
     // also disable all active powerups
-    effects->chaos_    = false;
-    effects->confuse_  = false;
-    ball->passthrough_ = false;
-    ball->sticky_      = false;
-    player->color_     = glm::vec3{ 1.0f };
-    ball->color_       = glm::vec3{ 1.0f };
+    effects_->chaos_    = false;
+    effects_->confuse_  = false;
+    ball_->passthrough_ = false;
+    ball_->sticky_      = false;
+    player_->color_     = glm::vec3{ 1.0f };
+    ball_->color_       = glm::vec3{ 1.0f };
 }
 
 
 void gc::Game::render()
 {
-    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU || state_ == GameState::GAME_WIN)
+    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU ||
+        state_ == GameState::GAME_WIN)
     {
-        effects->begin_render();
+        effects_->begin_render();
         // Draw background
-        renderer->draw_sprite(gc::ResourceManager::get_texture("background"),
+        renderer_->draw_sprite(gc::ResourceManager::get_texture("background"),
                               glm::vec2(0.0f, 0.0f),
                               glm::vec2(width_, height_),
                               0.0f);
 
         // Draw level
-        levels_[current_level_].draw(*renderer);
+        levels_[current_level_].draw(*renderer_);
 
-        player->draw(*renderer);
+        player_->draw(*renderer_);
 
         // NO
         for (auto& powerup : powerups_)
         {
             if (!powerup.destroyed_)
             {
-                powerup.draw(*renderer);
+                powerup.draw(*renderer_);
             }
         }
 
-        particles->draw();
-        ball->draw(*renderer);
+        particles_->draw();
+        ball_->draw(*renderer_);
 
 
-        effects->end_render();
-        effects->render(glfwGetTime());
+        effects_->end_render();
+        effects_->render(glfwGetTime());
 
         // Show lives
         std::stringstream ss;
         ss << lives_;
-        text->render_text("Lives" + ss.str(), 5.0f, 5.0f, 1.0f);
+        text_->render_text("Lives" + ss.str(), 5.0f, 5.0f, 1.0f);
     }
 
     if (state_ == GameState::GAME_MENU)
     {
-        text->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
-        text->render_text(
+        text_->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
+        text_->render_text(
             "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
     }
 
     if (state_ == GameState::GAME_WIN)
     {
-        text->render_text(
+        text_->render_text(
             "YOU WON!", 320.0, height_ / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0));
-        text->render_text("Press ENTER to retry or ESC to quit",
+        text_->render_text("Press ENTER to retry or ESC to quit",
                           130.0,
                           height_ / 2,
                           1.0,
@@ -377,7 +351,7 @@ void gc::Game::do_collisions()
     {
         if (!box.destroyed_)
         {
-            Collision collision{ check_collision(*ball, box) };
+            Collision collision{ check_collision(*ball_, box) };
             if (std::get<0>(collision)) // if collision is true
             {
                 // destroy block if not solid
@@ -385,51 +359,51 @@ void gc::Game::do_collisions()
                 {
                     box.destroyed_ = true;
                     spawn_powerups(box);
-                    ma_engine_play_sound(&engine, "res/audio/bleep.mp3", nullptr);
+                    ma_engine_play_sound(&engine_, "res/audio/bleep.mp3", nullptr);
                 }
                 else
                 { // if block is solid, enable shake effect
                     shake_time      = 0.05f;
-                    effects->shake_ = true;
-                    ma_engine_play_sound(&engine, "res/audio/solid.mp3", nullptr);
+                    effects_->shake_ = true;
+                    ma_engine_play_sound(&engine_, "res/audio/solid.mp3", nullptr);
                 }
 
                 // collision resolution
                 Direction direction{ std::get<1>(collision) };
                 glm::vec2 diff_vector{ std::get<2>(collision) };
-                if (!(ball->passthrough_ &&
+                if (!(ball_->passthrough_ &&
                       !box.is_solid_)) // don't do collision resolution on non-solid
                                        // bricks if pass-through is activated
                 {
                     if (direction == Direction::LEFT ||
                         direction == Direction::RIGHT) // horizontal collision
                     {
-                        ball->velocity_.x =
-                            -ball->velocity_.x;        // reverse horizontal velocity
+                        ball_->velocity_.x =
+                            -ball_->velocity_.x;        // reverse horizontal velocity
                         // relocate
-                        float penetration{ ball->radius_ - std::abs(diff_vector.x) };
+                        float penetration{ ball_->radius_ - std::abs(diff_vector.x) };
                         if (direction == Direction::LEFT)
                         {
-                            ball->pos_.x += penetration; // move ball to right
+                            ball_->pos_.x += penetration; // move ball_ to right
                         }
                         else
                         {
-                            ball->pos_.x -= penetration; // move ball to left;
+                            ball_->pos_.x -= penetration; // move ball_ to left;
                         }
                     }
                     else                                 // vertical collision
                     {
-                        ball->velocity_.y =
-                            -ball->velocity_.y;          // reverse vertical velocity
+                        ball_->velocity_.y =
+                            -ball_->velocity_.y;          // reverse vertical velocity
                         // relocate
-                        float penetration{ ball->radius_ - std::abs(diff_vector.y) };
+                        float penetration{ ball_->radius_ - std::abs(diff_vector.y) };
                         if (direction == Direction::UP)
                         {
-                            ball->pos_.y -= penetration; // move ball back up
+                            ball_->pos_.y -= penetration; // move ball_ back up
                         }
                         else
                         {
-                            ball->pos_.y += penetration; // move ball back down
+                            ball_->pos_.y += penetration; // move ball_ back down
                         }
                     }
                 }
@@ -447,40 +421,40 @@ void gc::Game::do_collisions()
             {
                 powerup.destroyed_ = true;
             }
-            if (check_collision(*player, powerup))
+            if (check_collision(*player_, powerup))
             {
-                // collided with player, now active powerup
+                // collided with player_, now active powerup
                 active_powerup(powerup);
                 powerup.destroyed_ = true;
                 powerup.activated_ = true;
-                ma_engine_play_sound(&engine, "res/audio/powerup.wav", nullptr);
+                ma_engine_play_sound(&engine_, "res/audio/powerup.wav", nullptr);
             }
         }
     }
 
-    // and finally check collisions for player pad (unless stuck)
-    Collision result{ check_collision(*ball, *player) };
-    if (!ball->stuck_ && std::get<0>(result))
+    // and finally check collisions for player_ pad (unless stuck)
+    Collision result{ check_collision(*ball_, *player_) };
+    if (!ball_->stuck_ && std::get<0>(result))
     {
         // check where it hit the board, and change velocity based on where it hit
         // the board
-        float center_board{ player->pos_.x + player->size_.x / 2.0f };
-        float distance{ ball->pos_.x + ball->radius_ - center_board };
-        float percentage{ distance / (player->size_.x / 2.0f) };
+        float center_board{ player_->pos_.x + player_->size_.x / 2.0f };
+        float distance{ ball_->pos_.x + ball_->radius_ - center_board };
+        float percentage{ distance / (player_->size_.x / 2.0f) };
 
         // then move accordingly
         float strength{ 2.0f };
-        glm::vec2 old_velocity{ ball->velocity_ };
-        ball->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
-        // ball->velocity_.y = -ball->velocity_.y;
-        ball->velocity_.y =
-            -1.0f * abs(ball->velocity_.y); // avoid sticky paddle issue
-        ball->velocity_ =
-            glm::normalize(ball->velocity_) * glm::length(old_velocity);
+        glm::vec2 old_velocity{ ball_->velocity_ };
+        ball_->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
+        // ball_->velocity_.y = -ball_->velocity_.y;
+        ball_->velocity_.y =
+            -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
+        ball_->velocity_ =
+            glm::normalize(ball_->velocity_) * glm::length(old_velocity);
 
-        ball->stuck_ = ball->sticky_;
+        ball_->stuck_ = ball_->sticky_;
 
-        ma_engine_play_sound(&engine, "res/audio/bleep.wav", nullptr);
+        ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
     }
 }
 
@@ -552,34 +526,34 @@ void gc::Game::active_powerup(const PowerUp& powerup)
 {
     if (powerup.type_ == "speed")
     {
-        ball->velocity_ *= 1.2;
+        ball_->velocity_ *= 1.2;
     }
     else if (powerup.type_ == "sticky")
     {
-        ball->sticky_  = true;
-        player->color_ = glm::vec3{ 1.0f, 0.5f, 1.0f };
+        ball_->sticky_  = true;
+        player_->color_ = glm::vec3{ 1.0f, 0.5f, 1.0f };
     }
     else if (powerup.type_ == "pass-through")
     {
-        ball->passthrough_ = true;
-        ball->color_       = glm::vec3{ 1.0f, 0.5f, 0.5f };
+        ball_->passthrough_ = true;
+        ball_->color_       = glm::vec3{ 1.0f, 0.5f, 0.5f };
     }
     else if (powerup.type_ == "pad-size-increase")
     {
-        player->size_.x += 50;
+        player_->size_.x += 50;
     }
     else if (powerup.type_ == "confuse")
     {
-        if (!effects->chaos_)
+        if (!effects_->chaos_)
         {
-            effects->confuse_ = true; // only active if chaos wasn't already active
+            effects_->confuse_ = true; // only active if chaos wasn't already active
         }
     }
     else if (powerup.type_ == "chaos")
     {
-        if (!effects->confuse_)
+        if (!effects_->confuse_)
         {
-            effects->chaos_ = true;
+            effects_->chaos_ = true;
         }
     }
 }
@@ -612,37 +586,37 @@ void gc::Game::update_powerups(float dt)
             {
                 // remove powerup from list (will later be removed)
                 powerup.activated_ = false;
-                // deactive effects
+                // deactive effects_
                 if (powerup.type_ == "sticky")
                 {
                     if (!is_other_powerup_active(powerups_, "sticky"))
                     { // only reset if no other PowerUp of type sticky is active
-                        ball->sticky_  = false;
-                        player->color_ = glm::vec3{ 1.0f };
+                        ball_->sticky_  = false;
+                        player_->color_ = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "pass-through")
                 {
                     if (!is_other_powerup_active(powerups_, "pass-through"))
                     {
-                        ball->passthrough_ = false;
-                        ball->color_       = glm::vec3{ 1.0f };
+                        ball_->passthrough_ = false;
+                        ball_->color_       = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "confuse")
                 {
                     if (!is_other_powerup_active(powerups_, "confuse"))
                     {
-                        ball->passthrough_ = false;
-                        ball->color_       = glm::vec3{ 1.0f };
+                        ball_->passthrough_ = false;
+                        ball_->color_       = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "chaos")
                 {
                     if (!is_other_powerup_active(powerups_, "chaos"))
                     {
-                        ball->passthrough_ = false;
-                        ball->color_       = glm::vec3{ 1.0f };
+                        ball_->passthrough_ = false;
+                        ball_->color_       = glm::vec3{ 1.0f };
                     }
                 }
             }
