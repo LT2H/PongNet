@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "Common.h"
 #include "GameCommon/GameObject.h"
 #include "GameCommon/Texture.h"
