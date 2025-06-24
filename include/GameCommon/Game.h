@@ -75,8 +75,7 @@ class Game
     u32 width_;
     u32 height_;
 
-    std::unique_ptr<BallObject> ball1_;
-    std::unique_ptr<BallObject> ball2_;
+    std::unique_ptr<BallObject> ball_;
 
     std::unique_ptr<GameObject> player1_;
     std::unique_ptr<GameObject> player2_;
