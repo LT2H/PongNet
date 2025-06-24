@@ -125,14 +125,6 @@ void gc::Game::init()
     player2_ = std::make_unique<GameObject>(
         player2_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
 
-    glm::vec2 ball2_pos{ player2_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
-                                                  BALL_RADIUS * 2.0f } };
-
-    ball2_ = std::make_unique<BallObject>(ball2_pos,
-                                          BALL_RADIUS,
-                                          INITIAL_BALL_VELOCITY,
-                                          ResourceManager::get_texture("face"));
-
     text_ = std::make_unique<TextRender>(width_, height_);
     text_->load("res/fonts/OCRAEXT.TTF", 24);
 
@@ -264,10 +256,6 @@ void gc::Game::process_player2_input(float dt)
             if (player2_->pos_.x >= 0.0f)
             {
                 player2_->pos_.x -= velocity;
-                if (ball2_->stuck_)
-                {
-                    ball2_->pos_.x -= velocity;
-                }
             }
         }
         if (keys_[GLFW_KEY_RIGHT])
@@ -275,15 +263,7 @@ void gc::Game::process_player2_input(float dt)
             if (player2_->pos_.x <= width_ - player2_->size_.x)
             {
                 player2_->pos_.x += velocity;
-                if (ball2_->stuck_)
-                {
-                    ball2_->pos_.x += velocity;
-                }
             }
-        }
-        if (keys_[GLFW_KEY_0])
-        {
-            ball2_->stuck_ = false;
         }
     }
 }
@@ -293,14 +273,12 @@ void gc::Game::update(float dt)
 {
     // update objects
     ball1_->move(dt, width_);
-    ball2_->move(dt, width_);
 
     // Check for collisions
     do_collisions();
 
     // update particles_
     particles_->update(dt, *ball1_, 2, glm::vec2{ ball1_->radius_ / 2.0f });
-    particles_->update(dt, *ball2_, 2, glm::vec2{ ball2_->radius_ / 2.0f });
 
     update_powerups(dt);
 
@@ -380,7 +358,7 @@ void gc::Game::reset_player()
     player1_->color_     = glm::vec3{ 1.0f };
     ball1_->color_       = glm::vec3{ 1.0f };
 
-    // TODO: reset player2_/ball2_ stats
+    // TODO: reset player2_ stats
 }
 
 
@@ -413,8 +391,6 @@ void gc::Game::render()
 
         particles_->draw();
         ball1_->draw(*renderer_);
-        ball2_->draw(*renderer_);
-
 
         effects_->end_render();
         effects_->render(glfwGetTime());
@@ -557,8 +533,6 @@ void gc::Game::do_collisions()
 
         ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
     }
-
-    // TODO: ball2 collision
 }
 
 bool should_spawn(u32 chance)
@@ -659,8 +633,6 @@ void gc::Game::active_powerup(const PowerUp& powerup)
             effects_->chaos_ = true;
         }
     }
-
-    // TODO: player2/ball2 powerups
 }
 
 bool is_other_powerup_active(std::span<gc::PowerUp> powerups, std::string_view type)
@@ -737,8 +709,6 @@ void gc::Game::update_powerups(float dt)
                        [](const PowerUp& powerup)
                        { return powerup.destroyed_ && !powerup.activated_; }),
         powerups_.end());
-
-    // TODO: ball2 powerups
 }
 
 bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
