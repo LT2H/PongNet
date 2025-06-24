@@ -74,9 +74,10 @@ int main()
         last_frame = current_frame;
         glfwPollEvents();
         
-        // manage user input
+        // manage users input
         // -----------------
-        game.process_input(delta_time);
+        game.process_player1_input(delta_time);
+        game.process_player2_input(delta_time);
 
         // update game state
         // -----------------

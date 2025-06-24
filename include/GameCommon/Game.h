@@ -36,7 +36,8 @@ class Game
     ~Game();
     void init();
 
-    void process_input(float dt);
+    void process_player1_input(float dt);
+    void process_player2_input(float dt);
 
     void update(float dt);
 
@@ -74,9 +75,11 @@ class Game
     u32 width_;
     u32 height_;
 
-    std::unique_ptr<BallObject> ball_;
+    std::unique_ptr<BallObject> ball1_;
+    std::unique_ptr<BallObject> ball2_;
 
-    std::unique_ptr<GameObject> player_;
+    std::unique_ptr<GameObject> player1_;
+    std::unique_ptr<GameObject> player2_;
 
     std::unique_ptr<SpriteRenderer> renderer_;
 

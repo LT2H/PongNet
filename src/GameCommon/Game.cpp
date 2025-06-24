@@ -7,6 +7,7 @@
 #include <GameCommon/BallObject.h>
 #include <GameCommon/ParticleGenerator.h>
 #include <GameCommon/PostProcessor.h>
+#include <memory>
 
 glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
 float PLAYER_VELOCITY{ 500.0f };
@@ -102,21 +103,37 @@ void gc::Game::init()
     levels_.push_back(four);
 
     // configure game objects
-    glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
-                                     height_ - PLAYER_SIZE.y } };
+    // Player 1
+    glm::vec2 player1_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
+                                      height_ - PLAYER_SIZE.y } };
 
-    player_ = std::make_unique<GameObject>(
-        player_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+    player1_ = std::make_unique<GameObject>(
+        player1_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
 
-    glm::vec2 ball_pos{ player_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
-                                                -BALL_RADIUS * 2.0f } };
+    glm::vec2 ball1_pos{ player1_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
+                                                  -BALL_RADIUS * 2.0f } };
 
-    ball_ = std::make_unique<BallObject>( ball_pos,
-                           BALL_RADIUS,
-                           INITIAL_BALL_VELOCITY,
-                           ResourceManager::get_texture("face") );
+    ball1_ = std::make_unique<BallObject>(ball1_pos,
+                                          BALL_RADIUS,
+                                          INITIAL_BALL_VELOCITY,
+                                          ResourceManager::get_texture("face"));
 
-    text_ = std::make_unique<TextRender>( width_, height_ );
+    // Player 2
+    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
+                                      0 } };
+
+    player2_ = std::make_unique<GameObject>(
+        player2_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+
+    glm::vec2 ball2_pos{ player2_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
+                                                  BALL_RADIUS * 2.0f } };
+
+    ball2_ = std::make_unique<BallObject>(ball2_pos,
+                                          BALL_RADIUS,
+                                          INITIAL_BALL_VELOCITY,
+                                          ResourceManager::get_texture("face"));
+
+    text_ = std::make_unique<TextRender>(width_, height_);
     text_->load("res/fonts/OCRAEXT.TTF", 24);
 
     // Main Menu theme
@@ -129,7 +146,7 @@ void gc::Game::init()
     ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
 }
 
-void gc::Game::process_input(float dt)
+void gc::Game::process_player1_input(float dt)
 {
     if (state_ == GameState::GAME_MENU)
     {
@@ -162,7 +179,7 @@ void gc::Game::process_input(float dt)
         if (keys_[GLFW_KEY_ENTER])
         {
             keys_processed_[GLFW_KEY_ENTER] = true;
-            effects_->chaos_                 = false;
+            effects_->chaos_                = false;
             state_                          = GameState::GAME_MENU;
         }
     }
@@ -170,46 +187,120 @@ void gc::Game::process_input(float dt)
     if (state_ == GameState::GAME_ACTIVE)
     {
         float velocity{ PLAYER_VELOCITY * dt };
-        // move player_'s paddle
+        // move player1_'s paddle
         if (keys_[GLFW_KEY_A])
         {
-            if (player_->pos_.x >= 0.0f)
+            if (player1_->pos_.x >= 0.0f)
             {
-                player_->pos_.x -= velocity;
-                if (ball_->stuck_)
+                player1_->pos_.x -= velocity;
+                if (ball1_->stuck_)
                 {
-                    ball_->pos_.x -= velocity;
+                    ball1_->pos_.x -= velocity;
                 }
             }
         }
         if (keys_[GLFW_KEY_D])
         {
-            if (player_->pos_.x <= width_ - player_->size_.x)
+            if (player1_->pos_.x <= width_ - player1_->size_.x)
             {
-                player_->pos_.x += velocity;
-                if (ball_->stuck_)
+                player1_->pos_.x += velocity;
+                if (ball1_->stuck_)
                 {
-                    ball_->pos_.x += velocity;
+                    ball1_->pos_.x += velocity;
                 }
             }
         }
         if (keys_[GLFW_KEY_SPACE])
         {
-            ball_->stuck_ = false;
+            ball1_->stuck_ = false;
         }
     }
 }
 
+void gc::Game::process_player2_input(float dt)
+{
+    if (state_ == GameState::GAME_MENU)
+    {
+        if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+        {
+            state_                          = GameState::GAME_ACTIVE;
+            keys_processed_[GLFW_KEY_ENTER] = true;
+        }
+        if (keys_[GLFW_KEY_UP] && !keys_processed_[GLFW_KEY_UP])
+        {
+            current_level_              = (current_level_ + 1) % 4;
+            keys_processed_[GLFW_KEY_UP] = true;
+        }
+        if (keys_[GLFW_KEY_DOWN] && !keys_processed_[GLFW_KEY_DOWN])
+        {
+            if (current_level_ > 0)
+            {
+                --current_level_;
+            }
+            else
+            {
+                current_level_ = 3;
+            }
+            keys_processed_[GLFW_KEY_DOWN] = true;
+        }
+    }
+
+    if (state_ == GameState::GAME_WIN)
+    {
+        if (keys_[GLFW_KEY_ENTER])
+        {
+            keys_processed_[GLFW_KEY_ENTER] = true;
+            effects_->chaos_                = false;
+            state_                          = GameState::GAME_MENU;
+        }
+    }
+
+    if (state_ == GameState::GAME_ACTIVE)
+    {
+        float velocity{ PLAYER_VELOCITY * dt };
+        // move player2_'s paddle
+        if (keys_[GLFW_KEY_LEFT])
+        {
+            if (player2_->pos_.x >= 0.0f)
+            {
+                player2_->pos_.x -= velocity;
+                if (ball2_->stuck_)
+                {
+                    ball2_->pos_.x -= velocity;
+                }
+            }
+        }
+        if (keys_[GLFW_KEY_RIGHT])
+        {
+            if (player2_->pos_.x <= width_ - player2_->size_.x)
+            {
+                player2_->pos_.x += velocity;
+                if (ball2_->stuck_)
+                {
+                    ball2_->pos_.x += velocity;
+                }
+            }
+        }
+        if (keys_[GLFW_KEY_0])
+        {
+            ball2_->stuck_ = false;
+        }
+    }
+}
+
+
 void gc::Game::update(float dt)
 {
     // update objects
-    ball_->move(dt, width_);
+    ball1_->move(dt, width_);
+    ball2_->move(dt, width_);
 
     // Check for collisions
     do_collisions();
 
     // update particles_
-    particles_->update(dt, *ball_, 2, glm::vec2{ ball_->radius_ / 2.0f });
+    particles_->update(dt, *ball1_, 2, glm::vec2{ ball1_->radius_ / 2.0f });
+    particles_->update(dt, *ball2_, 2, glm::vec2{ ball2_->radius_ / 2.0f });
 
     update_powerups(dt);
 
@@ -223,8 +314,8 @@ void gc::Game::update(float dt)
         }
     }
 
-    // check loss condition
-    if (ball_->pos_.y >= height_)
+    // check loss condition of player 1
+    if (ball1_->pos_.y >= height_)
     {
         --lives_;
 
@@ -236,14 +327,18 @@ void gc::Game::update(float dt)
         reset_player();
     }
 
-    // check win condition
+    // TODO: check loss condition of player 2
+
+    // check win condition of player 1
     if (state_ == GameState::GAME_ACTIVE && levels_[current_level_].is_completed())
     {
         reset_player();
         reset_level();
         effects_->chaos_ = true;
-        state_          = GameState::GAME_WIN;
+        state_           = GameState::GAME_WIN;
     }
+
+    // TODO: check win condition of player 2
 }
 
 void gc::Game::reset_level()
@@ -270,20 +365,22 @@ void gc::Game::reset_level()
 
 void gc::Game::reset_player()
 {
-    // reset player_/ball_ stats
-    player_->size_ = PLAYER_SIZE;
-    player_->pos_ =
+    // reset player1_/ball1_ stats
+    player1_->size_ = PLAYER_SIZE;
+    player1_->pos_ =
         glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, height_ - PLAYER_SIZE.y };
-    ball_->reset(player_->pos_ + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
-                                          -(BALL_RADIUS * 2.0f) },
-                INITIAL_BALL_VELOCITY);
+    ball1_->reset(player1_->pos_ + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
+                                              -(BALL_RADIUS * 2.0f) },
+                  INITIAL_BALL_VELOCITY);
     // also disable all active powerups
-    effects_->chaos_    = false;
-    effects_->confuse_  = false;
-    ball_->passthrough_ = false;
-    ball_->sticky_      = false;
-    player_->color_     = glm::vec3{ 1.0f };
-    ball_->color_       = glm::vec3{ 1.0f };
+    effects_->chaos_     = false;
+    effects_->confuse_   = false;
+    ball1_->passthrough_ = false;
+    ball1_->sticky_      = false;
+    player1_->color_     = glm::vec3{ 1.0f };
+    ball1_->color_       = glm::vec3{ 1.0f };
+
+    // TODO: reset player2_/ball2_ stats
 }
 
 
@@ -295,14 +392,15 @@ void gc::Game::render()
         effects_->begin_render();
         // Draw background
         renderer_->draw_sprite(gc::ResourceManager::get_texture("background"),
-                              glm::vec2(0.0f, 0.0f),
-                              glm::vec2(width_, height_),
-                              0.0f);
+                               glm::vec2(0.0f, 0.0f),
+                               glm::vec2(width_, height_),
+                               0.0f);
 
         // Draw level
         levels_[current_level_].draw(*renderer_);
 
-        player_->draw(*renderer_);
+        player1_->draw(*renderer_);
+        player2_->draw(*renderer_);
 
         // NO
         for (auto& powerup : powerups_)
@@ -314,7 +412,8 @@ void gc::Game::render()
         }
 
         particles_->draw();
-        ball_->draw(*renderer_);
+        ball1_->draw(*renderer_);
+        ball2_->draw(*renderer_);
 
 
         effects_->end_render();
@@ -338,10 +437,10 @@ void gc::Game::render()
         text_->render_text(
             "YOU WON!", 320.0, height_ / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0));
         text_->render_text("Press ENTER to retry or ESC to quit",
-                          130.0,
-                          height_ / 2,
-                          1.0,
-                          glm::vec3(1.0, 1.0, 0.0));
+                           130.0,
+                           height_ / 2,
+                           1.0,
+                           glm::vec3(1.0, 1.0, 0.0));
     }
 }
 
@@ -351,7 +450,7 @@ void gc::Game::do_collisions()
     {
         if (!box.destroyed_)
         {
-            Collision collision{ check_collision(*ball_, box) };
+            Collision collision{ check_collision(*ball1_, box) };
             if (std::get<0>(collision)) // if collision is true
             {
                 // destroy block if not solid
@@ -363,7 +462,7 @@ void gc::Game::do_collisions()
                 }
                 else
                 { // if block is solid, enable shake effect
-                    shake_time      = 0.05f;
+                    shake_time       = 0.05f;
                     effects_->shake_ = true;
                     ma_engine_play_sound(&engine_, "res/audio/solid.mp3", nullptr);
                 }
@@ -371,39 +470,41 @@ void gc::Game::do_collisions()
                 // collision resolution
                 Direction direction{ std::get<1>(collision) };
                 glm::vec2 diff_vector{ std::get<2>(collision) };
-                if (!(ball_->passthrough_ &&
+                if (!(ball1_->passthrough_ &&
                       !box.is_solid_)) // don't do collision resolution on non-solid
                                        // bricks if pass-through is activated
                 {
                     if (direction == Direction::LEFT ||
                         direction == Direction::RIGHT) // horizontal collision
                     {
-                        ball_->velocity_.x =
-                            -ball_->velocity_.x;        // reverse horizontal velocity
+                        ball1_->velocity_.x =
+                            -ball1_->velocity_.x;      // reverse horizontal velocity
                         // relocate
-                        float penetration{ ball_->radius_ - std::abs(diff_vector.x) };
+                        float penetration{ ball1_->radius_ -
+                                           std::abs(diff_vector.x) };
                         if (direction == Direction::LEFT)
                         {
-                            ball_->pos_.x += penetration; // move ball_ to right
+                            ball1_->pos_.x += penetration; // move ball_ to right
                         }
                         else
                         {
-                            ball_->pos_.x -= penetration; // move ball_ to left;
+                            ball1_->pos_.x -= penetration; // move ball_ to left;
                         }
                     }
-                    else                                 // vertical collision
+                    else                                   // vertical collision
                     {
-                        ball_->velocity_.y =
-                            -ball_->velocity_.y;          // reverse vertical velocity
+                        ball1_->velocity_.y =
+                            -ball1_->velocity_.y; // reverse vertical velocity
                         // relocate
-                        float penetration{ ball_->radius_ - std::abs(diff_vector.y) };
+                        float penetration{ ball1_->radius_ -
+                                           std::abs(diff_vector.y) };
                         if (direction == Direction::UP)
                         {
-                            ball_->pos_.y -= penetration; // move ball_ back up
+                            ball1_->pos_.y -= penetration; // move ball_ back up
                         }
                         else
                         {
-                            ball_->pos_.y += penetration; // move ball_ back down
+                            ball1_->pos_.y += penetration; // move ball_ back down
                         }
                     }
                 }
@@ -421,9 +522,9 @@ void gc::Game::do_collisions()
             {
                 powerup.destroyed_ = true;
             }
-            if (check_collision(*player_, powerup))
+            if (check_collision(*player1_, powerup))
             {
-                // collided with player_, now active powerup
+                // collided with player1_, now active powerup
                 active_powerup(powerup);
                 powerup.destroyed_ = true;
                 powerup.activated_ = true;
@@ -432,30 +533,32 @@ void gc::Game::do_collisions()
         }
     }
 
-    // and finally check collisions for player_ pad (unless stuck)
-    Collision result{ check_collision(*ball_, *player_) };
-    if (!ball_->stuck_ && std::get<0>(result))
+    // and finally check collisions for player1_ pad (unless stuck)
+    Collision result{ check_collision(*ball1_, *player1_) };
+    if (!ball1_->stuck_ && std::get<0>(result))
     {
         // check where it hit the board, and change velocity based on where it hit
         // the board
-        float center_board{ player_->pos_.x + player_->size_.x / 2.0f };
-        float distance{ ball_->pos_.x + ball_->radius_ - center_board };
-        float percentage{ distance / (player_->size_.x / 2.0f) };
+        float center_board{ player1_->pos_.x + player1_->size_.x / 2.0f };
+        float distance{ ball1_->pos_.x + ball1_->radius_ - center_board };
+        float percentage{ distance / (player1_->size_.x / 2.0f) };
 
         // then move accordingly
         float strength{ 2.0f };
-        glm::vec2 old_velocity{ ball_->velocity_ };
-        ball_->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
+        glm::vec2 old_velocity{ ball1_->velocity_ };
+        ball1_->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
         // ball_->velocity_.y = -ball_->velocity_.y;
-        ball_->velocity_.y =
-            -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
-        ball_->velocity_ =
-            glm::normalize(ball_->velocity_) * glm::length(old_velocity);
+        ball1_->velocity_.y =
+            -1.0f * abs(ball1_->velocity_.y); // avoid sticky paddle issue
+        ball1_->velocity_ =
+            glm::normalize(ball1_->velocity_) * glm::length(old_velocity);
 
-        ball_->stuck_ = ball_->sticky_;
+        ball1_->stuck_ = ball1_->sticky_;
 
         ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
     }
+
+    // TODO: ball2 collision
 }
 
 bool should_spawn(u32 chance)
@@ -526,21 +629,21 @@ void gc::Game::active_powerup(const PowerUp& powerup)
 {
     if (powerup.type_ == "speed")
     {
-        ball_->velocity_ *= 1.2;
+        ball1_->velocity_ *= 1.2;
     }
     else if (powerup.type_ == "sticky")
     {
-        ball_->sticky_  = true;
-        player_->color_ = glm::vec3{ 1.0f, 0.5f, 1.0f };
+        ball1_->sticky_  = true;
+        player1_->color_ = glm::vec3{ 1.0f, 0.5f, 1.0f };
     }
     else if (powerup.type_ == "pass-through")
     {
-        ball_->passthrough_ = true;
-        ball_->color_       = glm::vec3{ 1.0f, 0.5f, 0.5f };
+        ball1_->passthrough_ = true;
+        ball1_->color_       = glm::vec3{ 1.0f, 0.5f, 0.5f };
     }
     else if (powerup.type_ == "pad-size-increase")
     {
-        player_->size_.x += 50;
+        player1_->size_.x += 50;
     }
     else if (powerup.type_ == "confuse")
     {
@@ -556,6 +659,8 @@ void gc::Game::active_powerup(const PowerUp& powerup)
             effects_->chaos_ = true;
         }
     }
+
+    // TODO: player2/ball2 powerups
 }
 
 bool is_other_powerup_active(std::span<gc::PowerUp> powerups, std::string_view type)
@@ -591,32 +696,32 @@ void gc::Game::update_powerups(float dt)
                 {
                     if (!is_other_powerup_active(powerups_, "sticky"))
                     { // only reset if no other PowerUp of type sticky is active
-                        ball_->sticky_  = false;
-                        player_->color_ = glm::vec3{ 1.0f };
+                        ball1_->sticky_  = false;
+                        player1_->color_ = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "pass-through")
                 {
                     if (!is_other_powerup_active(powerups_, "pass-through"))
                     {
-                        ball_->passthrough_ = false;
-                        ball_->color_       = glm::vec3{ 1.0f };
+                        ball1_->passthrough_ = false;
+                        ball1_->color_       = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "confuse")
                 {
                     if (!is_other_powerup_active(powerups_, "confuse"))
                     {
-                        ball_->passthrough_ = false;
-                        ball_->color_       = glm::vec3{ 1.0f };
+                        ball1_->passthrough_ = false;
+                        ball1_->color_       = glm::vec3{ 1.0f };
                     }
                 }
                 else if (powerup.type_ == "chaos")
                 {
                     if (!is_other_powerup_active(powerups_, "chaos"))
                     {
-                        ball_->passthrough_ = false;
-                        ball_->color_       = glm::vec3{ 1.0f };
+                        ball1_->passthrough_ = false;
+                        ball1_->color_       = glm::vec3{ 1.0f };
                     }
                 }
             }
@@ -632,6 +737,8 @@ void gc::Game::update_powerups(float dt)
                        [](const PowerUp& powerup)
                        { return powerup.destroyed_ && !powerup.activated_; }),
         powerups_.end());
+
+    // TODO: ball2 powerups
 }
 
 bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
