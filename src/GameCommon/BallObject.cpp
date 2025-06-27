@@ -19,7 +19,7 @@ gc::BallObject::BallObject(const glm::vec2& pos, float radius,
 {
 }
 
-glm::vec2 gc::BallObject::move(float dt, u32 window_width)
+glm::vec2 gc::BallObject::move(float dt, u32 window_width, u32 window_height)
 {
     // if not stuck to player board
     if (!stuck_)
@@ -43,6 +43,11 @@ glm::vec2 gc::BallObject::move(float dt, u32 window_width)
         {
             velocity_.y = -velocity_.y;
             pos_.y      = 0.0f;
+        }
+        else if (pos_.y + size_.y >= window_height)
+        {
+            velocity_.y = -velocity_.y;
+            pos_.y      = window_height - size_.y;
         }
     }
     return pos_;

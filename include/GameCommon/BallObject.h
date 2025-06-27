@@ -18,7 +18,7 @@ class BallObject : public GameObject
     BallObject(const glm::vec2& pos, float radius, const glm::vec2& velocity,
                const Texture2D& sprite);
 
-    glm::vec2 move(float dt, u32 window_width);
+    glm::vec2 move(float dt, u32 window_width, u32 window_height);
     void reset(const glm::vec2& position, const glm::vec2& velocity);
 };
 } // namespace gc
