@@ -17,7 +17,20 @@ target_include_directories(stb PUBLIC ../include)
 target_compile_features(stb PUBLIC cxx_std_20)
 
 # GameCommon
-add_library(GameCommon GameCommon/Game.cpp GameCommon/ResourceManager.cpp GameCommon/Shader.cpp GameCommon/Texture.cpp GameCommon/SpriteRenderer.cpp GameCommon/GameObject.cpp GameCommon/GameLevel.cpp GameCommon/BallObject.cpp GameCommon/ParticleGenerator.cpp GameCommon/PostProcessor.cpp GameCommon/TextRenderer.cpp)
+add_library(GameCommon
+    GameCommon/Game.cpp
+    GameCommon/ResourceManager.cpp
+    GameCommon/Shader.cpp
+    GameCommon/Texture.cpp
+    GameCommon/SpriteRenderer.cpp
+    GameCommon/GameObject.cpp
+    GameCommon/GameLevel.cpp
+    GameCommon/BallObject.cpp
+    GameCommon/ParticleGenerator.cpp
+    GameCommon/PostProcessor.cpp
+    GameCommon/TextRenderer.cpp
+    GameCommon/Player.cpp)
+
 target_include_directories(GameCommon PUBLIC ../include)
 
 # This depends on...
