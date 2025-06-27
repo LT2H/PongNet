@@ -1,5 +1,6 @@
 #include <GameCommon/TextRenderer.h>
 #include <GameCommon/GameObject.h>
+#include <GameCommon/Player.h>
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/Game.h>
 #include <GameCommon/SpriteRenderer.h>
@@ -7,18 +8,19 @@
 #include <GameCommon/BallObject.h>
 #include <GameCommon/ParticleGenerator.h>
 #include <GameCommon/PostProcessor.h>
-#include <memory>
 
-glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
-float PLAYER_VELOCITY{ 500.0f };
+constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
+constexpr float PLAYER_VELOCITY{ 500.0f };
 
 // Initial velocity of the Ball
-glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
+constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
 
 // Radius of the ball_ object
-float BALL_RADIUS{ 12.5f };
+constexpr float BALL_RADIUS{ 12.5f };
 
 float shake_time{ 0.0f };
+
+constexpr u32 FONT_SIZE{ 24 };
 
 gc::Game::Game(u32 width, u32 height)
     : state_{ GameState::GAME_MENU }, keys_{}, width_{ width }, height_{ height }
@@ -107,8 +109,8 @@ void gc::Game::init()
     glm::vec2 player1_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
                                       height_ - PLAYER_SIZE.y } };
 
-    player1_ = std::make_unique<GameObject>(
-        player1_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+    player1_ = std::make_unique<Player>(
+        3, player1_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
 
     glm::vec2 ball_pos{ player1_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
                                                  -BALL_RADIUS * 2.0f } };
@@ -119,13 +121,13 @@ void gc::Game::init()
                                          ResourceManager::get_texture("face"));
 
     // Player 2
-    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, 100 } };
+    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, 0 } };
 
-    player2_ = std::make_unique<GameObject>(
-        player2_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+    player2_ = std::make_unique<Player>(
+        3, player2_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
 
     text_ = std::make_unique<TextRender>(width_, height_);
-    text_->load("res/fonts/OCRAEXT.TTF", 24);
+    text_->load("res/fonts/OCRAEXT.TTF", FONT_SIZE);
 
     // Main Menu theme
     result_ = ma_engine_init(nullptr, &engine_);
@@ -271,7 +273,7 @@ void gc::Game::process_player2_input(float dt)
 void gc::Game::update(float dt)
 {
     // update objects
-    ball_->move(dt, width_);
+    ball_->move(dt, width_, height_);
 
     // Check for collisions
     do_collisions();
@@ -291,31 +293,37 @@ void gc::Game::update(float dt)
         }
     }
 
-    // check loss condition of player 1
-    if (ball_->pos_.y >= height_)
+    // reduce player 1 lives
+    if (ball_->pos_.y >= height_ - ball_->size_.y)
     {
-        --lives_;
-
-        if (lives_ == 0)
-        {
-            reset_level();
-            state_ = GameState::GAME_MENU;
-        }
-        reset_player();
+        --player1_->lives_;
     }
 
-    // TODO: check loss condition of player 2
+    // reduce player 2 lives
+    if (ball_->pos_.y <= 0)
+    {
+        --player2_->lives_;
+    }
 
     // check win condition of player 1
-    if (state_ == GameState::GAME_ACTIVE && levels_[current_level_].is_completed())
+    if (state_ == GameState::GAME_ACTIVE && player2_->lives_ == 0)
     {
-        reset_player();
+        reset_players();
         reset_level();
         effects_->chaos_ = true;
         state_           = GameState::GAME_WIN;
+        winner_       = Winner::Player1;
     }
 
     // TODO: check win condition of player 2
+    if (state_ == GameState::GAME_ACTIVE && player1_->lives_ == 0)
+    {
+        reset_players();
+        reset_level();
+        effects_->chaos_ = true;
+        state_           = GameState::GAME_WIN;
+        winner_       = Winner::Player2;
+    }
 }
 
 void gc::Game::reset_level()
@@ -337,10 +345,13 @@ void gc::Game::reset_level()
         levels_[3].load("res/levels/four.lvl", width_, height_ / 2);
     }
 
-    lives_ = 3;
+    player1_->lives_ = 3;
+    player2_->lives_ = 3;
+
+    winner_ = Winner::NoOne;
 }
 
-void gc::Game::reset_player()
+void gc::Game::reset_players()
 {
     // reset player1_/ball_ stats
     player1_->size_ = PLAYER_SIZE;
@@ -357,7 +368,10 @@ void gc::Game::reset_player()
     player1_->color_    = glm::vec3{ 1.0f };
     ball_->color_       = glm::vec3{ 1.0f };
 
-    // TODO: reset player2_ stats
+    // TODO: disable all active powerups for Player2?
+    player2_->size_  = PLAYER_SIZE;
+    player2_->pos_   = glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, 0 };
+    player2_->color_ = glm::vec3{ 1.0f };
 }
 
 
@@ -396,8 +410,12 @@ void gc::Game::render()
 
         // Show lives
         std::stringstream ss;
-        ss << lives_;
-        text_->render_text("Lives" + ss.str(), 5.0f, 5.0f, 1.0f);
+        ss << player2_->lives_;
+        text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
+        ss.str("");
+        ss.clear();
+        ss << player1_->lives_;
+        text_->render_text("Lives " + ss.str(), 5.0f, height_ - FONT_SIZE, 1.0f);
     }
 
     if (state_ == GameState::GAME_MENU)
@@ -409,8 +427,21 @@ void gc::Game::render()
 
     if (state_ == GameState::GAME_WIN)
     {
-        text_->render_text(
-            "YOU WON!", 320.0, height_ / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0));
+        std::string winner{};
+        if (winner_ == Winner::Player1)
+        {
+            winner = "PLAYER 1";
+        }
+        else if (winner_ == Winner::Player2)
+        {
+            winner = "PLAYER 2";
+        }
+
+        text_->render_text(winner + " WON!",
+                           320.0,
+                           height_ / 2 - 20.0,
+                           1.0,
+                           glm::vec3(0.0, 1.0, 0.0));
         text_->render_text("Press ENTER to retry or ESC to quit",
                            130.0,
                            height_ / 2,
@@ -551,7 +582,9 @@ void gc::Game::do_collisions()
         ball_->velocity_.y =
             -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
         ball_->velocity_ =
-            glm::normalize(-ball_->velocity_) * glm::length(old_velocity); // Flip the velocity_ of the player2 pad to shoot the ball downward
+            glm::normalize(-ball_->velocity_) *
+            glm::length(old_velocity); // Flip the velocity_ of the player2 pad to
+                                       // shoot the ball downward
 
         ball_->stuck_ = ball_->sticky_;
 

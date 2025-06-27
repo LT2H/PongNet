@@ -11,6 +11,9 @@
 
 namespace gc
 {
+
+class Player;
+
 enum class GameState
 {
     GAME_ACTIVE,
@@ -24,6 +27,13 @@ enum class Direction
     RIGHT,
     DOWN,
     LEFT,
+};
+
+enum class Winner
+{
+  NoOne,
+  Player1,
+  Player2,
 };
 
 using Collision = std::tuple<bool, Direction, glm::vec2>;
@@ -43,7 +53,7 @@ class Game
 
     void reset_level();
 
-    void reset_player();
+    void reset_players();
 
     void render();
 
@@ -63,8 +73,6 @@ class Game
 
     std::vector<PowerUp> powerups_{};
 
-    u32 lives_{ 3 };
-
   private:
     bool check_collision(const GameObject& one, const GameObject& two);
 
@@ -77,8 +85,9 @@ class Game
 
     std::unique_ptr<BallObject> ball_;
 
-    std::unique_ptr<GameObject> player1_;
-    std::unique_ptr<GameObject> player2_;
+    std::unique_ptr<Player> player1_;
+    std::unique_ptr<Player> player2_;
+    Winner winner_{Winner::NoOne};
 
     std::unique_ptr<SpriteRenderer> renderer_;
 
