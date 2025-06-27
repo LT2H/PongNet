@@ -10,9 +10,11 @@ target_link_libraries(App
         miniaudio
         GameCommon
         freetype
+        NetCommon
+        asio
 )
 
-# Optional if using Windows APIs directly (likely if you're using GLFW)
+# if using Windows APIs directly
 if(WIN32)
     target_link_libraries(App PRIVATE
         opengl32
