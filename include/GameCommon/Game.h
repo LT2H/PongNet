@@ -63,6 +63,9 @@ class Game
     void active_powerup(const PowerUp& powerup);
     void update_powerups(float dt);
 
+    // Reset the sprite renderer before cleaning up other resources
+    void shutdown();
+
     GameState state_;
 
     std::array<bool, 1024> keys_;
@@ -89,7 +92,7 @@ class Game
     std::unique_ptr<Player> player2_;
     Winner winner_{Winner::NoOne};
 
-    std::unique_ptr<SpriteRenderer> renderer_;
+    std::unique_ptr<SpriteRenderer> sprite_renderer_;
 
     std::unique_ptr<ParticleGenerator> particles_;
 

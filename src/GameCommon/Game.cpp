@@ -1,9 +1,9 @@
-#include <GameCommon/TextRenderer.h>
+#include <GameCommon/Textsprite_renderer_.h>
 #include <GameCommon/GameObject.h>
 #include <GameCommon/Player.h>
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/Game.h>
-#include <GameCommon/SpriteRenderer.h>
+#include <GameCommon/Spritesprite_renderer_.h>
 #include <GameCommon/Common.h>
 #include <GameCommon/BallObject.h>
 #include <GameCommon/ParticleGenerator.h>
@@ -80,7 +80,7 @@ void gc::Game::init()
         "res/textures/powerup_passthrough.png", true, "powerup_passthrough");
 
     // Set render-specific controls
-    renderer_ = std::make_unique<gc::SpriteRenderer>(
+    sprite_renderer__ = std::make_unique<gc::Spritesprite_renderer_>(
         gc::ResourceManager::get_shader("sprite"));
     particles_ = std::make_unique<gc::ParticleGenerator>(
         gc::ResourceManager::get_shader("particle"),
@@ -382,28 +382,28 @@ void gc::Game::render()
     {
         effects_->begin_render();
         // Draw background
-        renderer_->draw_sprite(gc::ResourceManager::get_texture("background"),
+        sprite_renderer__->draw_sprite(gc::ResourceManager::get_texture("background"),
                                glm::vec2(0.0f, 0.0f),
                                glm::vec2(width_, height_),
                                0.0f);
 
         // Draw level
-        levels_[current_level_].draw(*renderer_);
+        levels_[current_level_].draw(*sprite_renderer__);
 
-        player1_->draw(*renderer_);
-        player2_->draw(*renderer_);
+        player1_->draw(*sprite_renderer__);
+        player2_->draw(*sprite_renderer__);
 
         // NO
         for (auto& powerup : powerups_)
         {
             if (!powerup.destroyed_)
             {
-                powerup.draw(*renderer_);
+                powerup.draw(*sprite_renderer__);
             }
         }
 
         particles_->draw();
-        ball_->draw(*renderer_);
+        ball_->draw(*sprite_renderer__);
 
         effects_->end_render();
         effects_->render(glfwGetTime());
@@ -826,4 +826,9 @@ gc::Direction gc::Game::vector_direction(const glm::vec2& target)
         }
     }
     return static_cast<Direction>(best_match);
+}
+
+void gc::Game::shutdown(){
+
+    sprite_renderer__.reset();
 }

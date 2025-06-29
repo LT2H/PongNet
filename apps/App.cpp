@@ -92,6 +92,10 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // The sprite renderer must be reset before cleaning up other resources. Otherwise a segmentation fault will occur
+    // ---------------------------------------------------------
+    game.shutdown();
+
     // delete all resources as loaded using the resource manager
     // ---------------------------------------------------------
     gc::ResourceManager::clear();
