@@ -43,6 +43,27 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
+# Asio 
+FetchContent_Declare(
+    asio
+    GIT_REPOSITORY https://github.com/chriskohlhoff/asio
+    GIT_TAG asio-1-28-0
+)
+FetchContent_MakeAvailable(asio)
+
+# Define asio as an INTERFACE library
+add_library(asio INTERFACE)
+target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+
+# Fetch your header-only library
+FetchContent_Declare(
+    NetCommon
+    GIT_REPOSITORY https://github.com/LT2H/NetCommon.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(NetCommon)
+
 add_subdirectory(apps)
 
 add_subdirectory(src)

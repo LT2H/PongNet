@@ -1,6 +1,7 @@
 add_executable(App App.cpp)
 
 target_compile_features(App PRIVATE cxx_std_20)
+
 target_link_libraries(App
     PRIVATE
         glad
@@ -11,7 +12,6 @@ target_link_libraries(App
         GameCommon
         freetype
         NetCommon
-        asio
 )
 
 # if using Windows APIs directly
