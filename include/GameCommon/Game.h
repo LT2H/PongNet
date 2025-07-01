@@ -48,11 +48,11 @@ class Game
     bool init();
     void run();
 
-  private:
+  protected:
     void process_player1_input(float dt);
     void process_player2_input(float dt);
 
-    void update(float dt);
+    virtual bool update(float dt) ;
 
     void reset_level();
 
@@ -79,7 +79,7 @@ class Game
 
     std::vector<PowerUp> powerups_{};
 
-  private:
+  protected:
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     static void key_callback(GLFWwindow* window, int key, int scancode, int action,
                              int mode);
@@ -112,5 +112,8 @@ class Game
     // Audio
     ma_result result_{};
     ma_engine engine_{};
+
+  protected:
+    float shake_time_{ 0.0f };
 };
 } // namespace gc

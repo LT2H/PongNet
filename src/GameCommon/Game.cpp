@@ -18,8 +18,6 @@ constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
 // Radius of the ball_ object
 constexpr float BALL_RADIUS{ 12.5f };
 
-float shake_time{ 0.0f };
-
 constexpr u32 FONT_SIZE{ 24 };
 
 std::array<bool, 1024> gc::Game::keys_{};
@@ -363,7 +361,7 @@ void gc::Game::process_player2_input(float dt)
 }
 
 
-void gc::Game::update(float dt)
+bool gc::Game::update(float dt)
 {
     // update objects
     ball_->move(dt, width_, height_);
@@ -377,10 +375,10 @@ void gc::Game::update(float dt)
     update_powerups(dt);
 
     // reduce shake time
-    if (shake_time > 0.0f)
+    if (shake_time_ > 0.0f)
     {
-        shake_time -= dt;
-        if (shake_time <= 0.0f)
+        shake_time_ -= dt;
+        if (shake_time_ <= 0.0f)
         {
             effects_->shake_ = false;
         }
@@ -417,6 +415,8 @@ void gc::Game::update(float dt)
         state_           = GameState::GAME_WIN;
         winner_          = Winner::Player2;
     }
+
+    return 0;
 }
 
 void gc::Game::reset_level()
@@ -561,7 +561,7 @@ void gc::Game::do_collisions()
                 }
                 else
                 { // if block is solid, enable shake effect
-                    shake_time       = 0.05f;
+                    shake_time_       = 0.05f;
                     effects_->shake_ = true;
                     ma_engine_play_sound(&engine_, "res/audio/solid.mp3", nullptr);
                 }
