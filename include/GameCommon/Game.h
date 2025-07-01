@@ -31,9 +31,9 @@ enum class Direction
 
 enum class Winner
 {
-  NoOne,
-  Player1,
-  Player2,
+    NoOne,
+    Player1,
+    Player2,
 };
 
 using Collision = std::tuple<bool, Direction, glm::vec2>;
@@ -44,8 +44,11 @@ class Game
     Game(u32 width, u32 height);
 
     ~Game();
-    void init();
 
+    bool init();
+    void run();
+
+  private:
     void process_player1_input(float dt);
     void process_player2_input(float dt);
 
@@ -68,8 +71,8 @@ class Game
 
     GameState state_;
 
-    std::array<bool, 1024> keys_;
-    std::array<bool, 1024> keys_processed_;
+    static std::array<bool, 1024> keys_;
+    static std::array<bool, 1024> keys_processed_;
 
     std::vector<GameLevel> levels_{};
     u32 current_level_{ 0 };
@@ -77,6 +80,12 @@ class Game
     std::vector<PowerUp> powerups_{};
 
   private:
+    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                             int mode);
+
+    GLFWwindow* window_;
+
     bool check_collision(const GameObject& one, const GameObject& two);
 
     Collision check_collision(const BallObject& one, const GameObject& two);
@@ -90,7 +99,7 @@ class Game
 
     std::unique_ptr<Player> player1_;
     std::unique_ptr<Player> player2_;
-    Winner winner_{Winner::NoOne};
+    Winner winner_{ Winner::NoOne };
 
     std::unique_ptr<SpriteRenderer> sprite_renderer_;
 

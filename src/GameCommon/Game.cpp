@@ -22,15 +22,59 @@ float shake_time{ 0.0f };
 
 constexpr u32 FONT_SIZE{ 24 };
 
+std::array<bool, 1024> gc::Game::keys_{};
+std::array<bool, 1024> gc::Game::keys_processed_{};
+
 gc::Game::Game(u32 width, u32 height)
-    : state_{ GameState::GAME_MENU }, keys_{}, width_{ width }, height_{ height }
+    : state_{ GameState::GAME_MENU }, width_{ width }, height_{ height }
 {
+    window_ = nullptr;
 }
 
 gc::Game::~Game() { ma_engine_uninit(&engine_); }
 
-void gc::Game::init()
+bool gc::Game::init()
 {
+    // glfw: initialize and configure
+    // ------------------------------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+    glfwWindowHint(GLFW_RESIZABLE, false);
+
+    // glfw window creation
+    // --------------------
+    window_ = glfwCreateWindow(width_, height_, "Breakout", nullptr, nullptr);
+    if (!window_)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return false;
+    }
+
+    glfwSetKeyCallback(window_, key_callback);
+    glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+
+    // OpenGL configuration
+    // --------------------
+    glViewport(0, 0, width_, height_);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Load shaders
     ResourceManager::load_shader(
         "res/shaders/sprite.vert", "res/shaders/sprite.frag", "", "sprite");
@@ -134,9 +178,58 @@ void gc::Game::init()
     if (result_ != MA_SUCCESS)
     {
         std::cerr << "Failed to initialize audio\n";
-        return;
+        return false;
     }
     ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
+
+    return true;
+}
+
+void gc::Game::run()
+{
+    // Delta time vars
+    double delta_time{ 0.0f };
+    double last_frame{ 0.0f };
+    // render loop
+    // -----------
+    while (!glfwWindowShouldClose(window_))
+    {
+        // calculate delta time
+        double current_frame{ glfwGetTime() };
+        delta_time = current_frame - last_frame;
+        last_frame = current_frame;
+        glfwPollEvents();
+
+        // manage users input
+        // -----------------
+        process_player1_input(delta_time);
+        process_player2_input(delta_time);
+
+        // update game state
+        // -----------------
+        update(delta_time);
+
+        // render
+        // ------
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        render();
+
+        glfwSwapBuffers(window_);
+    }
+
+    // The sprite renderer must be reset before cleaning up other resources.
+    // Otherwise a segmentation fault will occur
+    // ---------------------------------------------------------
+    shutdown();
+
+    // delete all resources as loaded using the resource manager
+    // ---------------------------------------------------------
+    gc::ResourceManager::clear();
+
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
+    glfwTerminate();
 }
 
 void gc::Game::process_player1_input(float dt)
@@ -312,7 +405,7 @@ void gc::Game::update(float dt)
         reset_level();
         effects_->chaos_ = true;
         state_           = GameState::GAME_WIN;
-        winner_       = Winner::Player1;
+        winner_          = Winner::Player1;
     }
 
     // TODO: check win condition of player 2
@@ -322,7 +415,7 @@ void gc::Game::update(float dt)
         reset_level();
         effects_->chaos_ = true;
         state_           = GameState::GAME_WIN;
-        winner_       = Winner::Player2;
+        winner_          = Winner::Player2;
     }
 }
 
@@ -383,9 +476,9 @@ void gc::Game::render()
         effects_->begin_render();
         // Draw background
         sprite_renderer_->draw_sprite(gc::ResourceManager::get_texture("background"),
-                               glm::vec2(0.0f, 0.0f),
-                               glm::vec2(width_, height_),
-                               0.0f);
+                                      glm::vec2(0.0f, 0.0f),
+                                      glm::vec2(width_, height_),
+                                      0.0f);
 
         // Draw level
         levels_[current_level_].draw(*sprite_renderer_);
@@ -828,7 +921,36 @@ gc::Direction gc::Game::vector_direction(const glm::vec2& target)
     return static_cast<Direction>(best_match);
 }
 
-void gc::Game::shutdown(){
+void gc::Game::shutdown() { sprite_renderer_.reset(); }
 
-    sprite_renderer_.reset();
+// process all input: query GLFW whether relevant keys are pressed/released this
+// frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void gc::Game::key_callback(GLFWwindow* window, int key, int scancode, int action,
+                            int mode)
+{
+    // when a user presses the escape key, we set the WindowShouldClose property to
+    // true, closing the application
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (key >= 0 && key < 1024)
+    {
+        if (action == GLFW_PRESS)
+            keys_[key] = true;
+        else if (action == GLFW_RELEASE)
+        {
+            keys_[key]           = false;
+            keys_processed_[key] = false;
+        }
+    }
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback
+// function executes
+// ---------------------------------------------------------------------------------------------
+void gc::Game::framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
 }
