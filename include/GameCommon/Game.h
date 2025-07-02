@@ -43,24 +43,25 @@ class Game
   public:
     Game(u32 width, u32 height);
 
-    ~Game();
+    virtual ~Game();
 
-    bool init();
-    void run();
+    virtual bool init();
+    virtual void run();
 
-  protected:
+  private:
     void process_player1_input(float dt);
     void process_player2_input(float dt);
 
-    virtual bool update(float dt) ;
+  protected:
+    virtual bool update(float dt);
 
     void reset_level();
 
     void reset_players();
 
-    void render();
+    virtual void render();
 
-    void do_collisions();
+    virtual void do_collisions();
 
     void spawn_powerups(GameObject& block);
     void active_powerup(const PowerUp& powerup);
@@ -97,8 +98,11 @@ class Game
 
     std::unique_ptr<BallObject> ball_;
 
+  private:
     std::unique_ptr<Player> player1_;
     std::unique_ptr<Player> player2_;
+
+  protected:
     Winner winner_{ Winner::NoOne };
 
     std::unique_ptr<SpriteRenderer> sprite_renderer_;
@@ -115,5 +119,16 @@ class Game
 
   protected:
     float shake_time_{ 0.0f };
+
+    const glm::vec2 player_size_{ 100.0f, 20.0f };
+    const float player_velocity_{ 500.0f };
+
+    // Initial velocity of the Ball
+    const glm::vec2 initial_ball_velocity_{ 100.0f, -350.0f };
+
+    // Radius of the ball_ object
+    const float ball_radius_{ 12.5f };
+
+    const u32 font_size_{ 24 };
 };
 } // namespace gc

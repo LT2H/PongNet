@@ -9,17 +9,6 @@
 #include <GameCommon/ParticleGenerator.h>
 #include <GameCommon/PostProcessor.h>
 
-constexpr glm::vec2 PLAYER_SIZE{ 100.0f, 20.0f };
-constexpr float PLAYER_VELOCITY{ 500.0f };
-
-// Initial velocity of the Ball
-constexpr glm::vec2 INITIAL_BALL_VELOCITY{ 100.0f, -350.0f };
-
-// Radius of the ball_ object
-constexpr float BALL_RADIUS{ 12.5f };
-
-constexpr u32 FONT_SIZE{ 24 };
-
 std::array<bool, 1024> gc::Game::keys_{};
 std::array<bool, 1024> gc::Game::keys_processed_{};
 
@@ -148,28 +137,28 @@ bool gc::Game::init()
 
     // configure game objects
     // Player 1
-    glm::vec2 player1_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f,
-                                      height_ - PLAYER_SIZE.y } };
+    glm::vec2 player1_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+                                      height_ - player_size_.y } };
 
     player1_ = std::make_unique<Player>(
-        3, player1_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+        3, player1_pos, player_size_, ResourceManager::get_texture("paddle"));
 
-    glm::vec2 ball_pos{ player1_pos + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
-                                                 -BALL_RADIUS * 2.0f } };
+    glm::vec2 ball_pos{ player1_pos + glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                                 -ball_radius_ * 2.0f } };
 
     ball_ = std::make_unique<BallObject>(ball_pos,
-                                         BALL_RADIUS,
-                                         INITIAL_BALL_VELOCITY,
+                                         ball_radius_,
+                                         initial_ball_velocity_,
                                          ResourceManager::get_texture("face"));
 
     // Player 2
-    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, 0 } };
+    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, 0 } };
 
     player2_ = std::make_unique<Player>(
-        3, player2_pos, PLAYER_SIZE, ResourceManager::get_texture("paddle"));
+        3, player2_pos, player_size_, ResourceManager::get_texture("paddle"));
 
     text_ = std::make_unique<TextRender>(width_, height_);
-    text_->load("res/fonts/OCRAEXT.TTF", FONT_SIZE);
+    text_->load("res/fonts/OCRAEXT.TTF", font_size_);
 
     // Main Menu theme
     result_ = ma_engine_init(nullptr, &engine_);
@@ -270,7 +259,7 @@ void gc::Game::process_player1_input(float dt)
 
     if (state_ == GameState::GAME_ACTIVE)
     {
-        float velocity{ PLAYER_VELOCITY * dt };
+        float velocity{ player_velocity_ * dt };
         // move player1_'s paddle
         if (keys_[GLFW_KEY_A])
         {
@@ -341,7 +330,7 @@ void gc::Game::process_player2_input(float dt)
 
     if (state_ == GameState::GAME_ACTIVE)
     {
-        float velocity{ PLAYER_VELOCITY * dt };
+        float velocity{ player_velocity_ * dt };
         // move player2_'s paddle
         if (keys_[GLFW_KEY_LEFT])
         {
@@ -447,12 +436,12 @@ void gc::Game::reset_level()
 void gc::Game::reset_players()
 {
     // reset player1_/ball_ stats
-    player1_->size_ = PLAYER_SIZE;
+    player1_->size_ = player_size_;
     player1_->pos_ =
-        glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, height_ - PLAYER_SIZE.y };
-    ball_->reset(player1_->pos_ + glm::vec2{ PLAYER_SIZE.x / 2.0f - BALL_RADIUS,
-                                             -(BALL_RADIUS * 2.0f) },
-                 INITIAL_BALL_VELOCITY);
+        glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, height_ - player_size_.y };
+    ball_->reset(player1_->pos_ + glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                             -(ball_radius_ * 2.0f) },
+                 initial_ball_velocity_);
     // also disable all active powerups
     effects_->chaos_    = false;
     effects_->confuse_  = false;
@@ -462,8 +451,8 @@ void gc::Game::reset_players()
     ball_->color_       = glm::vec3{ 1.0f };
 
     // TODO: disable all active powerups for Player2?
-    player2_->size_  = PLAYER_SIZE;
-    player2_->pos_   = glm::vec2{ width_ / 2.0f - PLAYER_SIZE.x / 2.0f, 0 };
+    player2_->size_  = player_size_;
+    player2_->pos_   = glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, 0 };
     player2_->color_ = glm::vec3{ 1.0f };
 }
 
@@ -508,7 +497,7 @@ void gc::Game::render()
         ss.str("");
         ss.clear();
         ss << player1_->lives_;
-        text_->render_text("Lives " + ss.str(), 5.0f, height_ - FONT_SIZE, 1.0f);
+        text_->render_text("Lives " + ss.str(), 5.0f, height_ - font_size_, 1.0f);
     }
 
     if (state_ == GameState::GAME_MENU)
@@ -645,7 +634,7 @@ void gc::Game::do_collisions()
         // then move accordingly
         float strength{ 2.0f };
         glm::vec2 old_velocity{ ball_->velocity_ };
-        ball_->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
+        ball_->velocity_.x = initial_ball_velocity_.x * percentage * strength;
         // ball_->velocity_.y = -ball_->velocity_.y;
         ball_->velocity_.y =
             -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
@@ -670,7 +659,7 @@ void gc::Game::do_collisions()
         // then move accordingly
         float strength{ 2.0f };
         glm::vec2 old_velocity{ ball_->velocity_ };
-        ball_->velocity_.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
+        ball_->velocity_.x = initial_ball_velocity_.x * percentage * strength;
         // ball_->velocity_.y = -ball_->velocity_.y;
         ball_->velocity_.y =
             -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue

@@ -2,18 +2,487 @@
 
 #include <GameCommon/Game.h>
 #include "Client.h"
-#include "GameCommon/Player.h"
+#include <GameCommon/Player.h>
+#include <GameCommon/ResourceManager.h>
 
 class OnlineGame : public gc::Game
 {
+
   public:
     OnlineGame(u32 width, u32 height) : gc::Game(width, height) {}
 
+
+    bool init() override
+    {
+        // glfw: initialize and configure
+        // ------------------------------
+        glfwInit();
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+        glfwWindowHint(GLFW_RESIZABLE, false);
+
+        // glfw window creation
+        // --------------------
+        window_ = glfwCreateWindow(width_, height_, "Pong Net", nullptr, nullptr);
+        if (!window_)
+        {
+            std::cout << "Failed to create GLFW window" << std::endl;
+            glfwTerminate();
+            return false;
+        }
+        glfwMakeContextCurrent(window_);
+
+        // glad: load all OpenGL function pointers
+        // ---------------------------------------
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+        {
+            std::cout << "Failed to initialize GLAD" << std::endl;
+            return false;
+        }
+
+        glfwSetKeyCallback(window_, key_callback);
+        glfwSetFramebufferSizeCallback(window_, framebuffer_size_callback);
+
+        // OpenGL configuration
+        // --------------------
+        glViewport(0, 0, width_, height_);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // Load shaders
+        gc::ResourceManager::load_shader(
+            "res/shaders/sprite.vert", "res/shaders/sprite.frag", "", "sprite");
+        gc::ResourceManager::load_shader("res/shaders/particle.vert",
+                                         "res/shaders/particle.frag",
+                                         "",
+                                         "particle");
+        gc::ResourceManager::load_shader("res/shaders/postprocessing.vert",
+                                         "res/shaders/postprocessing.frag",
+                                         "",
+                                         "postprocessing");
+
+        // configure shaders
+        glm::mat4 projection{ glm::ortho(0.0f,
+                                         static_cast<float>(width_),
+                                         static_cast<float>(height_),
+                                         0.0f,
+                                         -1.0f,
+                                         1.0f) };
+
+        gc::ResourceManager::get_shader("sprite").use().set_integer("image", 0);
+        gc::ResourceManager::get_shader("sprite").set_matrix4("projection",
+                                                              projection);
+
+        gc::ResourceManager::get_shader("particle").use().set_integer("sprite", 0);
+        gc::ResourceManager::get_shader("particle")
+            .set_matrix4("projection", projection);
+
+        // Load textures
+        gc::ResourceManager::load_texture(
+            "res/textures/awesomeface.png", true, "face");
+        gc::ResourceManager::load_texture(
+            "res/textures/background.jpg", false, "background");
+        gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
+        gc::ResourceManager::load_texture(
+            "res/textures/indestructible_block.png", false, "indestructible_block");
+        gc::ResourceManager::load_texture("res/textures/paddle.png", true, "paddle");
+
+        gc::ResourceManager::load_texture(
+            "res/textures/particle.png", true, "particle");
+
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_speed.png", true, "powerup_speed");
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_sticky.png", true, "powerup_sticky");
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_increase.png", true, "powerup_increase");
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_confuse.png", true, "powerup_confuse");
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_chaos.png", true, "powerup_chaos");
+        gc::ResourceManager::load_texture(
+            "res/textures/powerup_passthrough.png", true, "powerup_passthrough");
+
+        // Set render-specific controls
+        sprite_renderer_ = std::make_unique<gc::SpriteRenderer>(
+            gc::ResourceManager::get_shader("sprite"));
+        particles_ = std::make_unique<gc::ParticleGenerator>(
+            gc::ResourceManager::get_shader("particle"),
+            gc::ResourceManager::get_texture("particle"),
+            500);
+        effects_ = std::make_unique<gc::PostProcessor>(
+            gc::ResourceManager::get_shader("postprocessing"), width_, height_);
+
+        // Load levels
+        gc::GameLevel one;
+        one.load("res/levels/one.lvl", width_, height_ / 2);
+        gc::GameLevel two;
+        two.load("res/levels/two.lvl", width_, height_ / 2);
+        gc::GameLevel three;
+        three.load("res/levels/three.lvl", width_, height_ / 2);
+        gc::GameLevel four;
+        four.load("res/levels/four.lvl", width_, height_ / 2);
+
+        levels_.push_back(one);
+        levels_.push_back(two);
+        levels_.push_back(three);
+        levels_.push_back(four);
+
+        // configure game objects
+        // Player 1
+        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+                                         height_ - player_size_.y } };
+
+        local_player_ = std::make_unique<gc::Player>(
+            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
+
+        glm::vec2 ball_pos{ player_pos +
+                            glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                       -ball_radius_ * 2.0f } };
+
+        ball_ = std::make_unique<gc::BallObject>(
+            ball_pos,
+            ball_radius_,
+            initial_ball_velocity_,
+            gc::ResourceManager::get_texture("face"));
+
+        text_ = std::make_unique<gc::TextRender>(width_, height_);
+        text_->load("res/fonts/OCRAEXT.TTF", font_size_);
+
+        // Main Menu theme
+        result_ = ma_engine_init(nullptr, &engine_);
+        if (result_ != MA_SUCCESS)
+        {
+            std::cerr << "Failed to initialize audio\n";
+            return false;
+        }
+        ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
+
+        return true;
+    }
+
+    void run() override
+    {
+        // Delta time vars
+        double delta_time{ 0.0f };
+        double last_frame{ 0.0f };
+        // render loop
+        // -----------
+        while (!glfwWindowShouldClose(window_))
+        {
+            // calculate delta time
+            double current_frame{ glfwGetTime() };
+            delta_time = current_frame - last_frame;
+            last_frame = current_frame;
+            glfwPollEvents();
+
+            // manage users input
+            // -----------------
+            process_input(delta_time);
+
+            // update game state
+            // -----------------
+            update(delta_time);
+
+            // render
+            // ------
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            render();
+
+            glfwSwapBuffers(window_);
+        }
+
+        // The sprite renderer must be reset before cleaning up other resources.
+        // Otherwise a segmentation fault will occur
+        // ---------------------------------------------------------
+        shutdown();
+
+        // delete all resources as loaded using the resource manager
+        // ---------------------------------------------------------
+        gc::ResourceManager::clear();
+
+        // glfw: terminate, clearing all previously allocated GLFW resources.
+        // ------------------------------------------------------------------
+        glfwTerminate();
+    }
+
+    void render() override
+    {
+        if (state_ == gc::GameState::GAME_ACTIVE ||
+            state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_WIN)
+        {
+            effects_->begin_render();
+            // Draw background
+            sprite_renderer_->draw_sprite(
+                gc::ResourceManager::get_texture("background"),
+                glm::vec2(0.0f, 0.0f),
+                glm::vec2(width_, height_),
+                0.0f);
+
+            // Draw level
+            levels_[current_level_].draw(*sprite_renderer_);
+
+            local_player_->draw(*sprite_renderer_);
+
+            // NO
+            for (auto& powerup : powerups_)
+            {
+                if (!powerup.destroyed_)
+                {
+                    powerup.draw(*sprite_renderer_);
+                }
+            }
+
+            particles_->draw();
+            ball_->draw(*sprite_renderer_);
+
+            effects_->end_render();
+            effects_->render(glfwGetTime());
+
+            // Show lives
+            std::stringstream ss;
+            ss << local_player_->lives_;
+            text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
+            // ss.str("");
+            // ss.clear();
+            // ss << player1_->lives_;
+            // text_->render_text(
+            //     "Lives " + ss.str(), 5.0f, height_ - font_size_, 1.0f);
+        }
+
+        if (state_ == gc::GameState::GAME_MENU)
+        {
+            text_->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
+            text_->render_text(
+                "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
+        }
+
+        if (state_ == gc::GameState::GAME_WIN)
+        {
+            std::string winner{};
+            if (winner_ == gc::Winner::Player1)
+            {
+                winner = "PLAYER 1";
+            }
+            else if (winner_ == gc::Winner::Player2)
+            {
+                winner = "PLAYER 2";
+            }
+
+            text_->render_text(winner + " WON!",
+                               320.0,
+                               height_ / 2 - 20.0,
+                               1.0,
+                               glm::vec3(0.0, 1.0, 0.0));
+            text_->render_text("Press ENTER to retry or ESC to quit",
+                               130.0,
+                               height_ / 2,
+                               1.0,
+                               glm::vec3(1.0, 1.0, 0.0));
+        }
+    }
+
     bool on_user_create() { return true; }
+
+    void process_input(float dt)
+    {
+        // Control of Player object
+        if (state_ == gc::GameState::GAME_MENU)
+        {
+            if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+            {
+                state_                          = gc::GameState::GAME_ACTIVE;
+                keys_processed_[GLFW_KEY_ENTER] = true;
+            }
+            if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
+            {
+                current_level_              = (current_level_ + 1) % 4;
+                keys_processed_[GLFW_KEY_W] = true;
+            }
+            if (keys_[GLFW_KEY_S] && !keys_processed_[GLFW_KEY_S])
+            {
+                if (current_level_ > 0)
+                {
+                    --current_level_;
+                }
+                else
+                {
+                    current_level_ = 3;
+                }
+                keys_processed_[GLFW_KEY_S] = true;
+            }
+        }
+
+        if (state_ == gc::GameState::GAME_WIN)
+        {
+            if (keys_[GLFW_KEY_ENTER])
+            {
+                keys_processed_[GLFW_KEY_ENTER] = true;
+                effects_->chaos_                = false;
+                state_                          = gc::GameState::GAME_MENU;
+            }
+        }
+
+        if (state_ == gc::GameState::GAME_ACTIVE)
+        {
+            float velocity{ player_velocity_ * dt };
+            // move player1_'s paddle
+            if (keys_[GLFW_KEY_A])
+            {
+                if (local_player_->pos_.x >= 0.0f)
+                {
+                    local_player_->pos_.x -= velocity;
+                    if (ball_->stuck_)
+                    {
+                        ball_->pos_.x -= velocity;
+                    }
+                }
+            }
+            if (keys_[GLFW_KEY_D])
+            {
+                if (local_player_->pos_.x <= width_ - local_player_->size_.x)
+                {
+                    local_player_->pos_.x += velocity;
+                    if (ball_->stuck_)
+                    {
+                        ball_->pos_.x += velocity;
+                    }
+                }
+            }
+            if (keys_[GLFW_KEY_SPACE])
+            {
+                ball_->stuck_ = false;
+            }
+        }
+    }
+
+    void do_collisions() override
+    {
+        for (gc::GameObject& box : levels_[current_level_].bricks)
+        {
+            if (!box.destroyed_)
+            {
+                gc::Collision collision{ check_collision(*ball_, box) };
+                if (std::get<0>(collision)) // if collision is true
+                {
+                    // destroy block if not solid
+                    if (!box.is_solid_)
+                    {
+                        box.destroyed_ = true;
+                        spawn_powerups(box);
+                        ma_engine_play_sound(
+                            &engine_, "res/audio/bleep.mp3", nullptr);
+                    }
+                    else
+                    { // if block is solid, enable shake effect
+                        shake_time_      = 0.05f;
+                        effects_->shake_ = true;
+                        ma_engine_play_sound(
+                            &engine_, "res/audio/solid.mp3", nullptr);
+                    }
+
+                    // collision resolution
+                    gc::Direction direction{ std::get<1>(collision) };
+                    glm::vec2 diff_vector{ std::get<2>(collision) };
+                    if (!(ball_->passthrough_ &&
+                          !box.is_solid_)) // don't do collision resolution on
+                                           // non-solid bricks if pass-through is
+                                           // activated
+                    {
+                        if (direction == gc::Direction::LEFT ||
+                            direction == gc::Direction::RIGHT) // horizontal collision
+                        {
+                            ball_->velocity_.x =
+                                -ball_->velocity_.x; // reverse horizontal velocity
+                            // relocate
+                            float penetration{ ball_->radius_ -
+                                               std::abs(diff_vector.x) };
+                            if (direction == gc::Direction::LEFT)
+                            {
+                                ball_->pos_.x += penetration; // move ball_ to right
+                            }
+                            else
+                            {
+                                ball_->pos_.x -= penetration; // move ball_ to left;
+                            }
+                        }
+                        else                                  // vertical collision
+                        {
+                            ball_->velocity_.y =
+                                -ball_->velocity_.y; // reverse vertical velocity
+                            // relocate
+                            float penetration{ ball_->radius_ -
+                                               std::abs(diff_vector.y) };
+                            if (direction == gc::Direction::UP)
+                            {
+                                ball_->pos_.y -= penetration; // move ball_ back up
+                            }
+                            else
+                            {
+                                ball_->pos_.y += penetration; // move ball_ back down
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // also check collisions on PowerUps and if so, activate them
+        for (gc::PowerUp& powerup : powerups_)
+        {
+            if (!powerup.destroyed_)
+            {
+                // first check if powerup passed bottom edge, if so: keep as inactive
+                // and destroy
+                if (powerup.pos_.y >= height_)
+                {
+                    powerup.destroyed_ = true;
+                }
+                if (check_collision(*local_player_, powerup))
+                {
+                    // collided with player1_, now active powerup
+                    active_powerup(powerup);
+                    powerup.destroyed_ = true;
+                    powerup.activated_ = true;
+                    ma_engine_play_sound(&engine_, "res/audio/powerup.wav", nullptr);
+                }
+            }
+        }
+
+        // and finally check collisions for player1_ pad (unless stuck)
+        gc::Collision result{ check_collision(*ball_, *local_player_) };
+        if (!ball_->stuck_ && std::get<0>(result))
+        {
+            // check where it hit the board, and change velocity based on where it
+            // hit the board
+            float center_board{ local_player_->pos_.x + local_player_->size_.x / 2.0f };
+            float distance{ ball_->pos_.x + ball_->radius_ - center_board };
+            float percentage{ distance / (local_player_->size_.x / 2.0f) };
+
+            // then move accordingly
+            float strength{ 2.0f };
+            glm::vec2 old_velocity{ ball_->velocity_ };
+            ball_->velocity_.x = initial_ball_velocity_.x * percentage * strength;
+            // ball_->velocity_.y = -ball_->velocity_.y;
+            ball_->velocity_.y =
+                -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
+            ball_->velocity_ =
+                glm::normalize(ball_->velocity_) * glm::length(old_velocity);
+
+            ball_->stuck_ = ball_->sticky_;
+
+            ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+        }
+    }
 
     bool update(float dt) override
     {
-        // update objects
+        // update objects locally
         ball_->move(dt, width_, height_);
 
         // Check for collisions
@@ -37,17 +506,11 @@ class OnlineGame : public gc::Game
         // reduce player 1 lives
         if (ball_->pos_.y >= height_ - ball_->size_.y)
         {
-            --player1_->lives_;
-        }
-
-        // reduce player 2 lives
-        if (ball_->pos_.y <= 0)
-        {
-            --player2_->lives_;
+            --local_player_->lives_;
         }
 
         // check win condition of player 1
-        if (state_ == gc::GameState::GAME_ACTIVE && player2_->lives_ == 0)
+        if (state_ == gc::GameState::GAME_ACTIVE && local_player_->lives_ == 0)
         {
             reset_players();
             reset_level();
@@ -56,20 +519,12 @@ class OnlineGame : public gc::Game
             winner_          = gc::Winner::Player1;
         }
 
-        // TODO: check win condition of player 2
-        if (state_ == gc::GameState::GAME_ACTIVE && player1_->lives_ == 0)
-        {
-            reset_players();
-            reset_level();
-            effects_->chaos_ = true;
-            state_           = gc::GameState::GAME_WIN;
-            winner_          = gc::Winner::Player2;
-        }
         return true;
     }
 
   private:
-    std::unordered_map<u32, gc::Player> map_objects{};
-    u32 player_id{ 0 };
+    std::unordered_map<u32, gc::Player> map_objects_{};
+    u32 player_id_{ 0 };
     Client client_{};
+    std::unique_ptr<gc::Player> local_player_{};
 };
