@@ -2,6 +2,7 @@
 
 #include <GameCommon/Game.h>
 #include "Client.h"
+#include "NetCommon/NetMessage.h"
 #include <GameCommon/Player.h>
 #include <GameCommon/ResourceManager.h>
 
@@ -14,6 +15,14 @@ class OnlineGame : public gc::Game
 
     bool init() override
     {
+        if (client_.connect("127.0.0.1", 60000))
+        {
+            return true;
+        }
+        {
+            return false;
+        }
+
         // glfw: initialize and configure
         // ------------------------------
         glfwInit();
@@ -145,6 +154,10 @@ class OnlineGame : public gc::Game
                             glm::vec2{ player_size_.x / 2.0f - ball_radius_,
                                        -ball_radius_ * 2.0f } };
 
+        // local_player2_ = std::make_unique<gc::Player>(
+        //     3, player_pos, player_size_,
+        //     gc::ResourceManager::get_texture("paddle"));
+
         ball_ = std::make_unique<gc::BallObject>(
             ball_pos,
             ball_radius_,
@@ -229,6 +242,7 @@ class OnlineGame : public gc::Game
             levels_[current_level_].draw(*sprite_renderer_);
 
             local_player_->draw(*sprite_renderer_);
+            // local_player2_->draw(*sprite_renderer_);
 
             // NO
             for (auto& powerup : powerups_)
@@ -396,10 +410,11 @@ class OnlineGame : public gc::Game
                                            // activated
                     {
                         if (direction == gc::Direction::LEFT ||
-                            direction == gc::Direction::RIGHT) // horizontal collision
+                            direction ==
+                                gc::Direction::RIGHT) // horizontal collision
                         {
                             ball_->velocity_.x =
-                                -ball_->velocity_.x; // reverse horizontal velocity
+                                -ball_->velocity_.x;  // reverse horizontal velocity
                             // relocate
                             float penetration{ ball_->radius_ -
                                                std::abs(diff_vector.x) };
@@ -460,7 +475,8 @@ class OnlineGame : public gc::Game
         {
             // check where it hit the board, and change velocity based on where it
             // hit the board
-            float center_board{ local_player_->pos_.x + local_player_->size_.x / 2.0f };
+            float center_board{ local_player_->pos_.x +
+                                local_player_->size_.x / 2.0f };
             float distance{ ball_->pos_.x + ball_->radius_ - center_board };
             float percentage{ distance / (local_player_->size_.x / 2.0f) };
 
@@ -482,6 +498,77 @@ class OnlineGame : public gc::Game
 
     bool update(float dt) override
     {
+        // Check for incoming network messages
+        if (client_.is_connected())
+        {
+            while (!client_.incoming().empty())
+            {
+                auto msg{ client_.incoming().pop_front().msg };
+
+                switch (msg.header.id)
+                {
+                case (GameMsgTypes::ClientAccepted):
+                {
+                    std::cout << "Server accepted client\n";
+                    net::Message<GameMsgTypes> msg{};
+                    msg.header.id = GameMsgTypes::ClientRegisterWithServer;
+
+                    msg << local_player_->pos_;
+
+                    client_.send(msg);
+
+                    break;
+                }
+                case (GameMsgTypes::ClientAssignId):
+                {
+                    // Server is assigning us out Id
+                    msg >> player_id_;
+                    std::cout << "Assigned client Id = " << player_id_ << "\n";
+                    break;
+                }
+                case (GameMsgTypes::GameAddPlayer):
+                {
+                    gc::Player player{ 0,
+                                       glm::vec2{ 0.0f, 0.0f },
+                                       player_size_,
+                                       gc::ResourceManager::get_texture("paddle") };
+
+                    msg >> player;
+                    map_objects_.insert_or_assign(player.unique_id_, player);
+
+                    if (player.unique_id_ == player_id_)
+                    {
+                        // Now we exist in game world
+                        waiting_for_connection = false;
+                    }
+                    break;
+                }
+                case (GameMsgTypes::GameRemovePlayer):
+                {
+                    u32 removal_id{ 0 };
+                    msg >> removal_id;
+                    map_objects_.erase(removal_id);
+                    break;
+                }
+                case (GameMsgTypes::GameUpdatePlayer):
+                {
+                    gc::Player player{ 0,
+                                       glm::vec2{ 0.0f, 0.0f },
+                                       player_size_,
+                                       gc::ResourceManager::get_texture("paddle") };
+
+                    msg >> player;
+                    map_objects_.insert_or_assign(player.unique_id_, player);
+                }
+                }
+            }
+        }
+        if (waiting_for_connection)
+        {
+            text_->render_text("WAITING TO CONNECT...", 100.0f, height_ / 2, 2.0f);
+            return true;
+        }
+
         // update objects locally
         ball_->move(dt, width_, height_);
 
@@ -519,6 +606,13 @@ class OnlineGame : public gc::Game
             winner_          = gc::Winner::Player1;
         }
 
+        // Send our player desc
+        net::Message<GameMsgTypes> msg{};
+        msg.header.id = GameMsgTypes::GameUpdatePlayer;
+        msg << map_objects_[player_id_];
+
+        client_.send(msg);
+
         return true;
     }
 
@@ -527,4 +621,7 @@ class OnlineGame : public gc::Game
     u32 player_id_{ 0 };
     Client client_{};
     std::unique_ptr<gc::Player> local_player_{};
+    // std::unique_ptr<gc::Player> local_player2_{};
+
+    bool waiting_for_connection{ true };
 };
