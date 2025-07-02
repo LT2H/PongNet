@@ -15,5 +15,6 @@ class Player : public GameObject
            const Texture2D& sprite);
 
     u32 lives_;
+    u32 unique_id_{ 0 };
 };
 } // namespace gc
