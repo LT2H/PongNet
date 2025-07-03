@@ -141,7 +141,7 @@ class OnlineGame : public gc::Game
         // glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
         //                                  height_ - player_size_.y } };
 
-        // local_player_ = std::make_unique<gc::Player>(
+        // player1_ = std::make_unique<gc::Player>(
         //     3, player_pos, player_size_,
         //     gc::ResourceManager::get_texture("paddle"));
 
@@ -227,12 +227,21 @@ class OnlineGame : public gc::Game
         glfwTerminate();
     }
 
-    void on_user_create()
+    void on_player1_create()
     {
         glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
                                          height_ - player_size_.y } };
 
-        local_player_ = std::make_unique<gc::Player>(
+        player1_ = std::make_unique<gc::Player>(
+            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
+    }
+
+    void on_player2_create()
+    {
+        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+                                         0 } };
+
+        player2_ = std::make_unique<gc::Player>(
             3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
     }
 
@@ -251,7 +260,8 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        on_user_create();
+        on_player1_create();
+        on_player2_create();
 
         if (state_ == gc::GameState::GAME_ACTIVE ||
             state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_WIN)
@@ -267,8 +277,8 @@ class OnlineGame : public gc::Game
             // Draw level
             levels_[current_level_].draw(*sprite_renderer_);
 
-            local_player_->draw(*sprite_renderer_);
-            // local_player2_->draw(*sprite_renderer_);
+            player1_->draw(*sprite_renderer_);
+            player2_->draw(*sprite_renderer_);
 
             // for (auto& powerup : powerups_)
             // {
@@ -286,7 +296,7 @@ class OnlineGame : public gc::Game
 
             // Show lives
             // std::stringstream ss;
-            // ss << local_player_->lives_;
+            // ss << player1_->lives_;
             // text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
             // ss.str("");
             // ss.clear();
@@ -372,9 +382,9 @@ class OnlineGame : public gc::Game
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (local_player_->pos_.x >= 0.0f)
+                if (player1_->pos_.x >= 0.0f)
                 {
-                    local_player_->pos_.x -= velocity;
+                    player1_->pos_.x -= velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x -= velocity;
@@ -383,9 +393,9 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (local_player_->pos_.x <= width_ - local_player_->size_.x)
+                if (player1_->pos_.x <= width_ - player1_->size_.x)
                 {
-                    local_player_->pos_.x += velocity;
+                    player1_->pos_.x += velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x += velocity;
@@ -481,7 +491,7 @@ class OnlineGame : public gc::Game
                 {
                     powerup.destroyed_ = true;
                 }
-                if (check_collision(*local_player_, powerup))
+                if (check_collision(*player1_, powerup))
                 {
                     // collided with player1_, now active powerup
                     active_powerup(powerup);
@@ -493,15 +503,14 @@ class OnlineGame : public gc::Game
         }
 
         // and finally check collisions for player1_ pad (unless stuck)
-        gc::Collision result{ check_collision(*ball_, *local_player_) };
+        gc::Collision result{ check_collision(*ball_, *player1_) };
         if (!ball_->stuck_ && std::get<0>(result))
         {
             // check where it hit the board, and change velocity based on where it
             // hit the board
-            float center_board{ local_player_->pos_.x +
-                                local_player_->size_.x / 2.0f };
+            float center_board{ player1_->pos_.x + player1_->size_.x / 2.0f };
             float distance{ ball_->pos_.x + ball_->radius_ - center_board };
-            float percentage{ distance / (local_player_->size_.x / 2.0f) };
+            float percentage{ distance / (player1_->size_.x / 2.0f) };
 
             // then move accordingly
             float strength{ 2.0f };
@@ -606,11 +615,11 @@ class OnlineGame : public gc::Game
         // // reduce player 1 lives
         // if (ball_->pos_.y >= height_ - ball_->size_.y)
         // {
-        //     --local_player_->lives_;
+        //     --player1_->lives_;
         // }
 
         // // check win condition of player 1
-        // if (state_ == gc::GameState::GAME_ACTIVE && local_player_->lives_ == 0)
+        // if (state_ == gc::GameState::GAME_ACTIVE && player1_->lives_ == 0)
         // {
         //     reset_players();
         //     reset_level();
@@ -633,7 +642,8 @@ class OnlineGame : public gc::Game
     std::unordered_map<u32, PlayerDesc> map_objects_{};
     u32 player_id_{ 0 };
     Client client_{};
-    std::unique_ptr<gc::Player> local_player_{};
+    std::unique_ptr<gc::Player> player1_{};
+    std::unique_ptr<gc::Player> player2_{};
     PlayerDesc player_desc_{};
     // std::unique_ptr<gc::Player> local_player2_{};
 
