@@ -1,7 +1,7 @@
 #include <GameCommon/Common.h>
 #include <NetCommon/NetCommon.h>
 #include "../GameMsgTypes.h"
-#include "GameCommon/Player.h"
+#include "../PlayerDesc.h"
 #include "GameCommon/ResourceManager.h"
 #include "NetCommon/NetConnection.h"
 #include "NetCommon/NetMessage.h"
@@ -43,29 +43,46 @@ class Server : public net::ServerInterface<GameMsgTypes>
         {
         case GameMsgTypes::ClientRegisterWithServer:
         {
-            gc::Player player{ 0,
-                               glm::vec2{ 0.0f, 0.0f },
-                               glm::vec2{ 100.0f, 20.0f },
-                               gc::ResourceManager::get_texture("paddle") };
+            PlayerDesc player{ 0, 3, { 0.0f, 0.0f } };
+
             msg >> player;
-            player.unique_id_ = client->id();
-            map_player_roster_.insert_or_assign(player.unique_id_, player);
+            player.unique_id = client->id();
+            map_player_roster_.insert_or_assign(player.unique_id, player);
 
             net::Message<GameMsgTypes> msg_send_id{};
             msg_send_id.header.id = GameMsgTypes::ClientAssignId;
-            msg_send_id << player.unique_id_;
+            msg_send_id << player.unique_id;
             message_client(client, msg_send_id);
 
             net::Message<GameMsgTypes> msg_add_player{};
             msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
             msg_add_player << player;
             message_all_clients(msg_add_player);
+
+            for (const auto& player : map_player_roster_)
+            {
+                net::Message<GameMsgTypes> msg_add_other_players{};
+                msg_add_other_players.header.id = GameMsgTypes::GameAddPlayer;
+                msg_add_other_players << player.second;
+                message_client(client, msg_add_other_players);
+            }
+            break;
+        }
+        case GameMsgTypes::ClientUnregisterWithServer:
+        {
+            break;
+        }
+        case GameMsgTypes::GameUpdatePlayer:
+        {
+            // Bounce update to everyone except incoming client
+            message_all_clients(msg, client);
+            break;
         }
         }
     }
 
   private:
-    std::unordered_map<u32, gc::Player> map_player_roster_{};
+    std::unordered_map<u32, PlayerDesc> map_player_roster_{};
 };
 
 int main()

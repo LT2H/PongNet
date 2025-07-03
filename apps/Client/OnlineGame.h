@@ -1,10 +1,12 @@
 #pragma once
 
 #include <GameCommon/Game.h>
+#include <GameCommon/Player.h>
 #include "Client.h"
 #include "NetCommon/NetMessage.h"
-#include <GameCommon/Player.h>
 #include <GameCommon/ResourceManager.h>
+#include <ostream>
+#include "../PlayerDesc.h"
 
 class OnlineGame : public gc::Game
 {
@@ -15,14 +17,6 @@ class OnlineGame : public gc::Game
 
     bool init() override
     {
-        if (client_.connect("127.0.0.1", 60000))
-        {
-            return true;
-        }
-        {
-            return false;
-        }
-
         // glfw: initialize and configure
         // ------------------------------
         glfwInit();
@@ -144,25 +138,26 @@ class OnlineGame : public gc::Game
 
         // configure game objects
         // Player 1
-        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-                                         height_ - player_size_.y } };
+        // glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+        //                                  height_ - player_size_.y } };
 
-        local_player_ = std::make_unique<gc::Player>(
-            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
-
-        glm::vec2 ball_pos{ player_pos +
-                            glm::vec2{ player_size_.x / 2.0f - ball_radius_,
-                                       -ball_radius_ * 2.0f } };
-
-        // local_player2_ = std::make_unique<gc::Player>(
+        // local_player_ = std::make_unique<gc::Player>(
         //     3, player_pos, player_size_,
         //     gc::ResourceManager::get_texture("paddle"));
 
-        ball_ = std::make_unique<gc::BallObject>(
-            ball_pos,
-            ball_radius_,
-            initial_ball_velocity_,
-            gc::ResourceManager::get_texture("face"));
+        // glm::vec2 ball_pos{ player_pos +
+        //                     glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+        //                                -ball_radius_ * 2.0f } };
+
+        // // local_player2_ = std::make_unique<gc::Player>(
+        // //     3, player_pos, player_size_,
+        // //     gc::ResourceManager::get_texture("paddle"));
+
+        // ball_ = std::make_unique<gc::BallObject>(
+        //     ball_pos,
+        //     ball_radius_,
+        //     initial_ball_velocity_,
+        //     gc::ResourceManager::get_texture("face"));
 
         text_ = std::make_unique<gc::TextRender>(width_, height_);
         text_->load("res/fonts/OCRAEXT.TTF", font_size_);
@@ -175,6 +170,13 @@ class OnlineGame : public gc::Game
             return false;
         }
         ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
+
+        // Connect to server
+        if (!client_.connect("127.0.0.1", 60000))
+        {
+            std::cerr << "Failed to connect to server" << std::endl;
+            return false;
+        }
 
         return true;
     }
@@ -196,7 +198,7 @@ class OnlineGame : public gc::Game
 
             // manage users input
             // -----------------
-            process_input(delta_time);
+            // process_input(delta_time);
 
             // update game state
             // -----------------
@@ -225,12 +227,36 @@ class OnlineGame : public gc::Game
         glfwTerminate();
     }
 
+    void on_user_create()
+    {
+        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+                                         height_ - player_size_.y } };
+
+        local_player_ = std::make_unique<gc::Player>(
+            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
+    }
+
     void render() override
     {
+        if (waiting_for_connection)
+        {
+            sprite_renderer_->draw_sprite(
+                gc::ResourceManager::get_texture("background"),
+                glm::vec2(0.0f, 0.0f),
+                glm::vec2(width_, height_),
+                0.0f);
+            levels_[current_level_].draw(*sprite_renderer_);
+
+            text_->render_text("WAITING TO CONNECT...", 100.0f, height_ / 2, 2.0f);
+            return;
+        }
+
+        on_user_create();
+
         if (state_ == gc::GameState::GAME_ACTIVE ||
             state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_WIN)
         {
-            effects_->begin_render();
+            // effects_->begin_render();
             // Draw background
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
@@ -244,25 +270,24 @@ class OnlineGame : public gc::Game
             local_player_->draw(*sprite_renderer_);
             // local_player2_->draw(*sprite_renderer_);
 
-            // NO
-            for (auto& powerup : powerups_)
-            {
-                if (!powerup.destroyed_)
-                {
-                    powerup.draw(*sprite_renderer_);
-                }
-            }
+            // for (auto& powerup : powerups_)
+            // {
+            //     if (!powerup.destroyed_)
+            //     {
+            //         powerup.draw(*sprite_renderer_);
+            //     }
+            // }
 
-            particles_->draw();
-            ball_->draw(*sprite_renderer_);
+            // particles_->draw();
+            // ball_->draw(*sprite_renderer_);
 
-            effects_->end_render();
-            effects_->render(glfwGetTime());
+            // effects_->end_render();
+            // effects_->render(glfwGetTime());
 
             // Show lives
-            std::stringstream ss;
-            ss << local_player_->lives_;
-            text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
+            // std::stringstream ss;
+            // ss << local_player_->lives_;
+            // text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
             // ss.str("");
             // ss.clear();
             // ss << player1_->lives_;
@@ -301,8 +326,6 @@ class OnlineGame : public gc::Game
                                glm::vec3(1.0, 1.0, 0.0));
         }
     }
-
-    bool on_user_create() { return true; }
 
     void process_input(float dt)
     {
@@ -507,104 +530,94 @@ class OnlineGame : public gc::Game
 
                 switch (msg.header.id)
                 {
-                case (GameMsgTypes::ClientAccepted):
+                case GameMsgTypes::ClientAccepted:
                 {
                     std::cout << "Server accepted client\n";
-                    net::Message<GameMsgTypes> msg{};
-                    msg.header.id = GameMsgTypes::ClientRegisterWithServer;
+                    net::Message<GameMsgTypes> sending_msg{};
+                    sending_msg.header.id = GameMsgTypes::ClientRegisterWithServer;
 
-                    msg << local_player_->pos_;
+                    sending_msg << player_desc_;
 
-                    client_.send(msg);
+                    client_.send(sending_msg);
 
                     break;
                 }
-                case (GameMsgTypes::ClientAssignId):
+                case GameMsgTypes::ClientAssignId:
                 {
                     // Server is assigning us out Id
                     msg >> player_id_;
                     std::cout << "Assigned client Id = " << player_id_ << "\n";
                     break;
                 }
-                case (GameMsgTypes::GameAddPlayer):
+                case GameMsgTypes::GameAddPlayer:
                 {
-                    gc::Player player{ 0,
-                                       glm::vec2{ 0.0f, 0.0f },
-                                       player_size_,
-                                       gc::ResourceManager::get_texture("paddle") };
+                    PlayerDesc player{ 0, 3, { 0.0f, 0.0f }, player_size_ };
 
                     msg >> player;
-                    map_objects_.insert_or_assign(player.unique_id_, player);
+                    map_objects_.insert_or_assign(player.unique_id, player);
 
-                    if (player.unique_id_ == player_id_)
+                    if (player.unique_id == player_id_)
                     {
                         // Now we exist in game world
                         waiting_for_connection = false;
                     }
                     break;
                 }
-                case (GameMsgTypes::GameRemovePlayer):
+                case GameMsgTypes::GameRemovePlayer:
                 {
                     u32 removal_id{ 0 };
                     msg >> removal_id;
                     map_objects_.erase(removal_id);
                     break;
                 }
-                case (GameMsgTypes::GameUpdatePlayer):
+                case GameMsgTypes::GameUpdatePlayer:
                 {
-                    gc::Player player{ 0,
-                                       glm::vec2{ 0.0f, 0.0f },
-                                       player_size_,
-                                       gc::ResourceManager::get_texture("paddle") };
+                    PlayerDesc player{ 0, 3, { 0.0f, 0.0f }, player_size_ };
 
                     msg >> player;
-                    map_objects_.insert_or_assign(player.unique_id_, player);
+                    map_objects_.insert_or_assign(player.unique_id, player);
+                    break;
                 }
                 }
             }
-        }
-        if (waiting_for_connection)
-        {
-            text_->render_text("WAITING TO CONNECT...", 100.0f, height_ / 2, 2.0f);
-            return true;
         }
 
         // update objects locally
-        ball_->move(dt, width_, height_);
+        // ball_->move(dt, width_, height_);
 
         // Check for collisions
-        do_collisions();
+        // do_collisions();
 
         // update particles_
-        particles_->update(dt, *ball_, 2, glm::vec2{ ball_->radius_ / 2.0f });
+        // particles_->update(dt, *ball_, 2, glm::vec2{ ball_->radius_ / 2.0f });
 
-        update_powerups(dt);
+        // update_powerups(dt);
 
         // reduce shake time
-        if (shake_time_ > 0.0f)
-        {
-            shake_time_ -= dt;
-            if (shake_time_ <= 0.0f)
-            {
-                effects_->shake_ = false;
-            }
-        }
+        // if (shake_time_ > 0.0f)
+        // {
+        //     shake_time_ -= dt;
+        //     if (shake_time_ <= 0.0f)
+        //     {
+        //         effects_->shake_ = false;
+        //     }
+        // }
 
-        // reduce player 1 lives
-        if (ball_->pos_.y >= height_ - ball_->size_.y)
-        {
-            --local_player_->lives_;
-        }
+        // // reduce player 1 lives
+        // if (ball_->pos_.y >= height_ - ball_->size_.y)
+        // {
+        //     --local_player_->lives_;
+        // }
 
-        // check win condition of player 1
-        if (state_ == gc::GameState::GAME_ACTIVE && local_player_->lives_ == 0)
-        {
-            reset_players();
-            reset_level();
-            effects_->chaos_ = true;
-            state_           = gc::GameState::GAME_WIN;
-            winner_          = gc::Winner::Player1;
-        }
+        // // check win condition of player 1
+        // if (state_ == gc::GameState::GAME_ACTIVE && local_player_->lives_ == 0)
+        // {
+        //     reset_players();
+        //     reset_level();
+        //     effects_->chaos_ = true;
+        //     state_           = gc::GameState::GAME_WIN;
+        //     winner_          = gc::Winner::Player1;
+        // }
 
         // Send our player desc
         net::Message<GameMsgTypes> msg{};
@@ -617,10 +630,11 @@ class OnlineGame : public gc::Game
     }
 
   private:
-    std::unordered_map<u32, gc::Player> map_objects_{};
+    std::unordered_map<u32, PlayerDesc> map_objects_{};
     u32 player_id_{ 0 };
     Client client_{};
     std::unique_ptr<gc::Player> local_player_{};
+    PlayerDesc player_desc_{};
     // std::unique_ptr<gc::Player> local_player2_{};
 
     bool waiting_for_connection{ true };
