@@ -1,7 +1,9 @@
 #include <GameCommon/Common.h>
 #include <NetCommon/NetCommon.h>
 #include "../GameMsgTypes.h"
-#include "../PlayerDesc.h"
+#include <GameCommon/PlayerDesc.h>
+#include <GameCommon/Player.h>
+#include <memory>
 #include "GameCommon/ResourceManager.h"
 #include "NetCommon/NetConnection.h"
 #include "NetCommon/NetMessage.h"
@@ -43,20 +45,23 @@ class Server : public net::ServerInterface<GameMsgTypes>
         {
         case GameMsgTypes::ClientRegisterWithServer:
         {
-            PlayerDesc player{ 0, 3, { 0.0f, 0.0f } };
+            PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f } };
+            msg >> player_desc;
 
-            msg >> player;
-            player.unique_id = client->id();
-            map_player_roster_.insert_or_assign(player.unique_id, player);
+            auto player{ std::make_shared<gc::Player>() };
+            player->set_props(player_desc);
+
+            player->unique_id_ = client->id();
+            map_player_roster_.insert_or_assign(player->unique_id_, player);
 
             net::Message<GameMsgTypes> msg_send_id{};
             msg_send_id.header.id = GameMsgTypes::ClientAssignId;
-            msg_send_id << player.unique_id;
+            msg_send_id << player->unique_id_;
             message_client(client, msg_send_id);
 
             net::Message<GameMsgTypes> msg_add_player{};
             msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
-            msg_add_player << player;
+            msg_add_player << player->get_desc();
             message_all_clients(msg_add_player);
 
             for (const auto& player : map_player_roster_)
@@ -82,7 +87,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     }
 
   private:
-    std::unordered_map<u32, PlayerDesc> map_player_roster_{};
+    std::unordered_map<u32, std::shared_ptr<gc::Player>> map_player_roster_{};
 };
 
 int main()

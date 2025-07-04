@@ -5,8 +5,9 @@
 #include "Client.h"
 #include "NetCommon/NetMessage.h"
 #include <GameCommon/ResourceManager.h>
+#include <memory>
 #include <ostream>
-#include "../PlayerDesc.h"
+#include <GameCommon/PlayerDesc.h>
 
 class OnlineGame : public gc::Game
 {
@@ -227,21 +228,12 @@ class OnlineGame : public gc::Game
         glfwTerminate();
     }
 
-    void on_player1_create()
+    void create_player(u32 id)
     {
         glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
                                          height_ - player_size_.y } };
 
-        player1_ = std::make_unique<gc::Player>(
-            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
-    }
-
-    void on_player2_create()
-    {
-        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-                                         0 } };
-
-        player2_ = std::make_unique<gc::Player>(
+        map_objects_[id] = std::make_shared<gc::Player>(
             3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
     }
 
@@ -260,9 +252,6 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        on_player1_create();
-        on_player2_create();
-
         if (state_ == gc::GameState::GAME_ACTIVE ||
             state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_WIN)
         {
@@ -277,9 +266,11 @@ class OnlineGame : public gc::Game
             // Draw level
             levels_[current_level_].draw(*sprite_renderer_);
 
-            player1_->draw(*sprite_renderer_);
-            player2_->draw(*sprite_renderer_);
-
+            // player_->draw(*sprite_renderer_);
+            for (auto& pair : map_objects_)
+            {
+                pair.second->draw(*sprite_renderer_);
+            }
             // for (auto& powerup : powerups_)
             // {
             //     if (!powerup.destroyed_)
@@ -382,9 +373,9 @@ class OnlineGame : public gc::Game
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (player1_->pos_.x >= 0.0f)
+                if (player_->pos_.x >= 0.0f)
                 {
-                    player1_->pos_.x -= velocity;
+                    player_->pos_.x -= velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x -= velocity;
@@ -393,9 +384,9 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (player1_->pos_.x <= width_ - player1_->size_.x)
+                if (player_->pos_.x <= width_ - player_->size_.x)
                 {
-                    player1_->pos_.x += velocity;
+                    player_->pos_.x += velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x += velocity;
@@ -491,7 +482,7 @@ class OnlineGame : public gc::Game
                 {
                     powerup.destroyed_ = true;
                 }
-                if (check_collision(*player1_, powerup))
+                if (check_collision(*player_, powerup))
                 {
                     // collided with player1_, now active powerup
                     active_powerup(powerup);
@@ -503,14 +494,14 @@ class OnlineGame : public gc::Game
         }
 
         // and finally check collisions for player1_ pad (unless stuck)
-        gc::Collision result{ check_collision(*ball_, *player1_) };
+        gc::Collision result{ check_collision(*ball_, *player_) };
         if (!ball_->stuck_ && std::get<0>(result))
         {
             // check where it hit the board, and change velocity based on where it
             // hit the board
-            float center_board{ player1_->pos_.x + player1_->size_.x / 2.0f };
+            float center_board{ player_->pos_.x + player_->size_.x / 2.0f };
             float distance{ ball_->pos_.x + ball_->radius_ - center_board };
-            float percentage{ distance / (player1_->size_.x / 2.0f) };
+            float percentage{ distance / (player_->size_.x / 2.0f) };
 
             // then move accordingly
             float strength{ 2.0f };
@@ -545,7 +536,8 @@ class OnlineGame : public gc::Game
                     net::Message<GameMsgTypes> sending_msg{};
                     sending_msg.header.id = GameMsgTypes::ClientRegisterWithServer;
 
-                    sending_msg << player_desc_;
+                    player_ = std::make_shared<gc::Player>();
+                    sending_msg << player_->get_desc();
 
                     client_.send(sending_msg);
 
@@ -560,15 +552,20 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GameAddPlayer:
                 {
-                    PlayerDesc player{ 0, 3, { 0.0f, 0.0f }, player_size_ };
+                    PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f }, player_size_ };
+                    msg >> player_desc;
 
-                    msg >> player;
-                    map_objects_.insert_or_assign(player.unique_id, player);
+                    auto player{ std::make_shared<gc::Player>() };
+                    player->set_props(player_desc);
+                    map_objects_.insert_or_assign(player->unique_id_,
+                                                  player);
 
-                    if (player.unique_id == player_id_)
+                    if (player->unique_id_ == player_id_)
                     {
                         // Now we exist in game world
                         waiting_for_connection = false;
+
+                        create_player(player_id_);
                     }
                     break;
                 }
@@ -581,10 +578,14 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GameUpdatePlayer:
                 {
-                    PlayerDesc player{ 0, 3, { 0.0f, 0.0f }, player_size_ };
+                    PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f }, player_size_ };
+                    msg >> player_desc;
 
-                    msg >> player;
-                    map_objects_.insert_or_assign(player.unique_id, player);
+                    auto player{ std::make_shared<gc::Player>() };
+                    player->set_props(player_desc);
+
+                    map_objects_.insert_or_assign(player->unique_id_,
+                                                  player);
                     break;
                 }
                 }
@@ -631,7 +632,7 @@ class OnlineGame : public gc::Game
         // Send our player desc
         net::Message<GameMsgTypes> msg{};
         msg.header.id = GameMsgTypes::GameUpdatePlayer;
-        msg << map_objects_[player_id_];
+        msg << map_objects_[player_id_]->get_desc();
 
         client_.send(msg);
 
@@ -639,12 +640,10 @@ class OnlineGame : public gc::Game
     }
 
   private:
-    std::unordered_map<u32, PlayerDesc> map_objects_{};
+    std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
     u32 player_id_{ 0 };
     Client client_{};
-    std::unique_ptr<gc::Player> player1_{};
-    std::unique_ptr<gc::Player> player2_{};
-    PlayerDesc player_desc_{};
+    std::shared_ptr<gc::Player> player_;
     // std::unique_ptr<gc::Player> local_player2_{};
 
     bool waiting_for_connection{ true };

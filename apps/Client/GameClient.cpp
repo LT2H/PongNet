@@ -10,6 +10,7 @@ int main()
     if (game.init())
     {
         game.run();
+        std::cout << "Game is running\n";
     }
     
     return 0;
