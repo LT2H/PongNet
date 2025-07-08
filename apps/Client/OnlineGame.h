@@ -197,7 +197,7 @@ class OnlineGame : public gc::Game
 
             // manage users input
             // -----------------
-            // process_input(delta_time);
+            process_input(delta_time);
 
             // update game state
             // -----------------
@@ -339,6 +339,7 @@ class OnlineGame : public gc::Game
         // Control of Player object
         if (state_ == gc::GameState::GAME_MENU)
         {
+            std::cout << "INSIDE GAME MENU\n";
             if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
             {
                 state_                          = gc::GameState::GAME_ACTIVE;
@@ -375,34 +376,36 @@ class OnlineGame : public gc::Game
 
         if (state_ == gc::GameState::GAME_ACTIVE)
         {
+            std::cout << "INSIDE GAME_ACTIVE\n";
+
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (local_player_->pos_.x >= 0.0f)
+                if (map_objects_[local_player_id_]->pos_.x >= 0.0f)
                 {
-                    local_player_->pos_.x -= velocity;
-                    if (ball_->stuck_)
-                    {
-                        ball_->pos_.x -= velocity;
-                    }
+                    map_objects_[local_player_id_]->pos_.x -= velocity;
+                    // if (ball_->stuck_)
+                    // {
+                    //     ball_->pos_.x -= velocity;
+                    // }
                 }
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (local_player_->pos_.x <= width_ - local_player_->size_.x)
+                if (map_objects_[local_player_id_]->pos_.x <= width_ - map_objects_[local_player_id_]->size_.x)
                 {
-                    local_player_->pos_.x += velocity;
-                    if (ball_->stuck_)
-                    {
-                        ball_->pos_.x += velocity;
-                    }
+                    map_objects_[local_player_id_]->pos_.x += velocity;
+                    // if (ball_->stuck_)
+                    // {
+                    //     ball_->pos_.x += velocity;
+                    // }
                 }
             }
-            if (keys_[GLFW_KEY_SPACE])
-            {
-                ball_->stuck_ = false;
-            }
+            // if (keys_[GLFW_KEY_SPACE])
+            // {
+            //     ball_->stuck_ = false;
+            // }
         }
     }
 
@@ -545,7 +548,7 @@ class OnlineGame : public gc::Game
 
                     local_player_ = std::make_shared<gc::Player>(
                         3,
-                        glm::vec2{ 0.0f, 0.0f },
+                        glm::vec2{ 100.0f, 100.0f },
                         player_size_,
                         gc::ResourceManager::get_texture("paddle"));
                     sending_msg << local_player_->get_desc();
@@ -565,8 +568,7 @@ class OnlineGame : public gc::Game
                 {
                     PlayerDesc player_desc{};
                     msg >> player_desc;
-                    if (!map_objects_.contains(player_desc.unique_id) &&
-                        player_desc.unique_id != 0)
+                    if (!map_objects_.contains(player_desc.unique_id))
                     {
                         auto player{ std::make_shared<gc::Player>(
                             3,
