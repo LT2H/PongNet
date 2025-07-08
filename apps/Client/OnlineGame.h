@@ -382,9 +382,9 @@ class OnlineGame : public gc::Game
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (map_objects_[local_player_id_]->pos_.x >= 0.0f)
+                if (map_objects_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
                 {
-                    map_objects_[local_player_id_]->pos_.x -= velocity;
+                    map_objects_[local_player_desc_.unique_id]->pos_.x -= velocity;
                     // if (ball_->stuck_)
                     // {
                     //     ball_->pos_.x -= velocity;
@@ -393,9 +393,10 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (map_objects_[local_player_id_]->pos_.x <= width_ - map_objects_[local_player_id_]->size_.x)
+                if (map_objects_[local_player_desc_.unique_id]->pos_.x <=
+                    width_ - map_objects_[local_player_desc_.unique_id]->size_.x)
                 {
-                    map_objects_[local_player_id_]->pos_.x += velocity;
+                    map_objects_[local_player_desc_.unique_id]->pos_.x += velocity;
                     // if (ball_->stuck_)
                     // {
                     //     ball_->pos_.x += velocity;
@@ -491,42 +492,43 @@ class OnlineGame : public gc::Game
                 {
                     powerup.destroyed_ = true;
                 }
-                if (check_collision(*local_player_, powerup))
-                {
-                    // collided with player1_, now active powerup
-                    active_powerup(powerup);
-                    powerup.destroyed_ = true;
-                    powerup.activated_ = true;
-                    ma_engine_play_sound(&engine_, "res/audio/powerup.wav", nullptr);
-                }
+                // if (check_collision(*local_player_, powerup))
+                // {
+                //     // collided with player1_, now active powerup
+                //     active_powerup(powerup);
+                //     powerup.destroyed_ = true;
+                //     powerup.activated_ = true;
+                //     ma_engine_play_sound(&engine_, "res/audio/powerup.wav",
+                //     nullptr);
+                // }
             }
         }
 
         // and finally check collisions for player1_ pad (unless stuck)
-        gc::Collision result{ check_collision(*ball_, *local_player_) };
-        if (!ball_->stuck_ && std::get<0>(result))
-        {
-            // check where it hit the board, and change velocity based on where it
-            // hit the board
-            float center_board{ local_player_->pos_.x +
-                                local_player_->size_.x / 2.0f };
-            float distance{ ball_->pos_.x + ball_->radius_ - center_board };
-            float percentage{ distance / (local_player_->size_.x / 2.0f) };
+        // gc::Collision result{ check_collision(*ball_, *local_player_) };
+        // if (!ball_->stuck_ && std::get<0>(result))
+        // {
+        //     // check where it hit the board, and change velocity based on where it
+        //     // hit the board
+        //     float center_board{ local_player_->pos_.x +
+        //                         local_player_->size_.x / 2.0f };
+        //     float distance{ ball_->pos_.x + ball_->radius_ - center_board };
+        //     float percentage{ distance / (local_player_->size_.x / 2.0f) };
 
-            // then move accordingly
-            float strength{ 2.0f };
-            glm::vec2 old_velocity{ ball_->velocity_ };
-            ball_->velocity_.x = initial_ball_velocity_.x * percentage * strength;
-            // ball_->velocity_.y = -ball_->velocity_.y;
-            ball_->velocity_.y =
-                -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
-            ball_->velocity_ =
-                glm::normalize(ball_->velocity_) * glm::length(old_velocity);
+        //     // then move accordingly
+        //     float strength{ 2.0f };
+        //     glm::vec2 old_velocity{ ball_->velocity_ };
+        //     ball_->velocity_.x = initial_ball_velocity_.x * percentage * strength;
+        //     // ball_->velocity_.y = -ball_->velocity_.y;
+        //     ball_->velocity_.y =
+        //         -1.0f * abs(ball_->velocity_.y); // avoid sticky paddle issue
+        //     ball_->velocity_ =
+        //         glm::normalize(ball_->velocity_) * glm::length(old_velocity);
 
-            ball_->stuck_ = ball_->sticky_;
+        //     ball_->stuck_ = ball_->sticky_;
 
-            ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
-        }
+        //     ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+        // }
     }
 
     bool update(float dt) override
@@ -546,22 +548,24 @@ class OnlineGame : public gc::Game
                     net::Message<GameMsgTypes> sending_msg{};
                     sending_msg.header.id = GameMsgTypes::ClientRegisterWithServer;
 
-                    local_player_ = std::make_shared<gc::Player>(
-                        3,
-                        glm::vec2{ 100.0f, 100.0f },
-                        player_size_,
-                        gc::ResourceManager::get_texture("paddle"));
-                    sending_msg << local_player_->get_desc();
+                    // local_player_ = std::make_shared<gc::Player>(
+                    //     3,
+                    //     glm::vec2{ 100.0f, 100.0f },
+                    //     player_size_,
+                    //     gc::ResourceManager::get_texture("paddle"));
+                    // sending_msg << local_player_->get_desc();
 
-                    client_.send(sending_msg);
+                    local_player_desc_ = PlayerDesc{ .pos{ 100.0f, 100.0f } };
+                    sending_msg << local_player_desc_;
+                    client_.send(sending_msg);  
 
                     break;
                 }
                 case GameMsgTypes::ClientAssignId:
                 {
                     // Server is assigning us out Id
-                    msg >> local_player_id_;
-                    std::cout << "Assigned client Id = " << local_player_id_ << "\n";
+                    msg >> local_player_desc_.unique_id;
+                    std::cout << "Assigned client Id = " << local_player_desc_.unique_id << "\n";
                     break;
                 }
                 case GameMsgTypes::GameAddPlayer:
@@ -579,7 +583,7 @@ class OnlineGame : public gc::Game
                         map_objects_.insert_or_assign(player->unique_id_, player);
                     }
 
-                    if (player_desc.unique_id == local_player_id_ &&
+                    if (player_desc.unique_id == local_player_desc_.unique_id &&
                         waiting_for_connection)
                     {
                         // Now we exist in game world
@@ -598,7 +602,7 @@ class OnlineGame : public gc::Game
                 {
                     PlayerDesc player_desc{};
                     msg >> player_desc;
-                                    
+
                     auto player{ std::make_shared<gc::Player>(
                         3,
                         glm::vec2{ 0.0f, 0.0f },
@@ -653,10 +657,9 @@ class OnlineGame : public gc::Game
         // Send our player desc
         net::Message<GameMsgTypes> msg{};
         msg.header.id = GameMsgTypes::GameUpdatePlayer;
-        if (map_objects_.contains(
-                local_player_id_)) 
+        if (map_objects_.contains(local_player_desc_.unique_id))
         {
-            msg << map_objects_[local_player_id_]->get_desc();
+            msg << map_objects_[local_player_desc_.unique_id]->get_desc();
             client_.send(msg);
         }
         return true;
@@ -664,10 +667,8 @@ class OnlineGame : public gc::Game
 
   private:
     std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
-    u32 local_player_id_{ 0 };
     Client client_{};
-    std::shared_ptr<gc::Player> local_player_;
-    // std::unique_ptr<gc::Player> local_player2_{};
+    PlayerDesc local_player_desc_;
 
     bool waiting_for_connection{ true };
 };
