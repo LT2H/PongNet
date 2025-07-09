@@ -2,11 +2,11 @@
 #include <NetCommon/NetCommon.h>
 #include "../GameMsgTypes.h"
 #include <GameCommon/PlayerDesc.h>
-#include <string>
 #include "GameCommon/ResourceManager.h"
 #include "NetCommon/NetConnection.h"
 #include "NetCommon/NetMessage.h"
 #include "NetCommon/NetServer.h"
+#include <GameCommon/BallDesc.h>
 
 class Server : public net::ServerInterface<GameMsgTypes>
 {
@@ -86,6 +86,16 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
                 net::Message<GameMsgTypes> msg_add_player{};
                 msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
+                if (!has_player_one_)
+                {
+                    player_desc.pos = glm::vec2{ 500.0f, 500.0f };
+                    has_player_one_ = true;
+
+                    // Also add the ball now that we have 2 players
+                    net::Message<GameMsgTypes> msg_add_ball{};
+                    msg_add_ball.header.id = GameMsgTypes::GameAddBall;
+                    message_client(client, msg_add_ball);
+                }
                 msg_add_player << player_desc;
                 message_all_clients(msg_add_player);
 
@@ -120,7 +130,9 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
   private:
     std::unordered_map<u32, PlayerDesc> map_player_roster_{};
+    BallDesc ball_;
     std::vector<u32> garbage_ids_;
+    bool has_player_one_{ false };
 };
 
 int main()

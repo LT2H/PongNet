@@ -3,6 +3,7 @@
 #include <GameCommon/Game.h>
 #include <GameCommon/Player.h>
 #include "Client.h"
+#include "GameCommon/BallObject.h"
 #include "NetCommon/NetMessage.h"
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/PlayerDesc.h>
@@ -10,6 +11,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <memory>
 
 class OnlineGame : public gc::Game
 {
@@ -140,26 +142,26 @@ class OnlineGame : public gc::Game
 
         // configure game objects
         // Player 1
-        // glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-        //                                  height_ - player_size_.y } };
+        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
+                                         height_ - player_size_.y } };
 
         // player1_ = std::make_unique<gc::Player>(
         //     3, player_pos, player_size_,
         //     gc::ResourceManager::get_texture("paddle"));
 
-        // glm::vec2 ball_pos{ player_pos +
-        //                     glm::vec2{ player_size_.x / 2.0f - ball_radius_,
-        //                                -ball_radius_ * 2.0f } };
+        glm::vec2 ball_pos{ player_pos +
+                            glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                       -ball_radius_ * 2.0f } };
 
         // // local_player2_ = std::make_unique<gc::Player>(
         // //     3, player_pos, player_size_,
         // //     gc::ResourceManager::get_texture("paddle"));
 
-        // ball_ = std::make_unique<gc::BallObject>(
-        //     ball_pos,
-        //     ball_radius_,
-        //     initial_ball_velocity_,
-        //     gc::ResourceManager::get_texture("face"));
+        ball_ = std::make_shared<gc::BallObject>(
+            ball_pos,
+            ball_radius_,
+            initial_ball_velocity_,
+            gc::ResourceManager::get_texture("face"));
 
         text_ = std::make_unique<gc::TextRender>(width_, height_);
         text_->load("res/fonts/OCRAEXT.TTF", font_size_);
@@ -344,7 +346,7 @@ class OnlineGame : public gc::Game
             // }
 
             // particles_->draw();
-            // ball_->draw(*sprite_renderer_);
+            ball_->draw(*sprite_renderer_);
 
             // effects_->end_render();
             // effects_->render(glfwGetTime());
@@ -440,10 +442,10 @@ class OnlineGame : public gc::Game
                 if (map_objects_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
                 {
                     map_objects_[local_player_desc_.unique_id]->pos_.x -= velocity;
-                    // if (ball_->stuck_)
-                    // {
-                    //     ball_->pos_.x -= velocity;
-                    // }
+                    if (ball_->stuck_)
+                    {
+                        ball_->pos_.x -= velocity;
+                    }
                 }
             }
             if (keys_[GLFW_KEY_D])
@@ -452,16 +454,16 @@ class OnlineGame : public gc::Game
                     width_ - map_objects_[local_player_desc_.unique_id]->size_.x)
                 {
                     map_objects_[local_player_desc_.unique_id]->pos_.x += velocity;
-                    // if (ball_->stuck_)
-                    // {
-                    //     ball_->pos_.x += velocity;
-                    // }
+                    if (ball_->stuck_)
+                    {
+                        ball_->pos_.x += velocity;
+                    }
                 }
             }
-            // if (keys_[GLFW_KEY_SPACE])
-            // {
-            //     ball_->stuck_ = false;
-            // }
+            if (keys_[GLFW_KEY_SPACE])
+            {
+                ball_->stuck_ = false;
+            }
         }
     }
 
@@ -678,12 +680,16 @@ class OnlineGame : public gc::Game
                     map_objects_.insert_or_assign(player->unique_id_, player);
                     break;
                 }
+                case GameMsgTypes::GameAddBall:
+                {
+                    break;
+                }
                 }
             }
         }
 
         // update objects locally
-        // ball_->move(dt, width_, height_);
+        ball_->move(dt, width_, height_);
 
         // Check for collisions
         // do_collisions();
@@ -732,6 +738,7 @@ class OnlineGame : public gc::Game
 
   private:
     std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
+    std::shared_ptr<gc::BallObject> ball_;
     Client client_{};
     PlayerDesc local_player_desc_;
     gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };

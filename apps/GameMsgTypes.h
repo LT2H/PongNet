@@ -15,4 +15,7 @@ enum class GameMsgTypes : u32 {
     GameAddPlayer,
     GameRemovePlayer,
     GameUpdatePlayer,
+
+    GameAddBall,
+    GameUpdateBall,
 };
