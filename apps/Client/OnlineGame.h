@@ -7,12 +7,15 @@
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/PlayerDesc.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 class OnlineGame : public gc::Game
 {
 
   public:
     OnlineGame(u32 width, u32 height) : gc::Game(width, height) {}
-
 
     bool init() override
     {
@@ -170,12 +173,12 @@ class OnlineGame : public gc::Game
         }
         ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
 
-        // Connect to server
-        if (!client_.connect("127.0.0.1", 60000))
-        {
-            std::cerr << "Failed to connect to server" << std::endl;
-            return false;
-        }
+        // UI
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsClassic();
+        ImGui_ImplGlfw_InitForOpenGL(window_, true);
+        ImGui_ImplOpenGL3_Init("#version 130"); // OpenGL 3.x
 
         return true;
     }
@@ -237,7 +240,45 @@ class OnlineGame : public gc::Game
 
     void render() override
     {
-        if (waiting_for_connection)
+        if (state_ == gc::GameState::GAME_CONNECT_TO_SERVER)
+        {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            sprite_renderer_->draw_sprite(
+                gc::ResourceManager::get_texture("background"),
+                glm::vec2(0.0f, 0.0f),
+                glm::vec2(width_, height_),
+                0.0f);
+
+            ImGui::Begin("");
+            ImGui::Text("Enter server IP");
+            ImGui::InputTextWithHint("##ServerIpInput",
+                                     "e.g. 127.0.0.1",
+                                     client_.ip_to_connect().data(),
+                                     client_.ip_to_connect().size());
+
+            if (ImGui::Button("Connect"))
+            {
+                // Connect to server
+                if (client_.connect(client_.ip_to_connect().data(), 60000))
+                {
+                    state_ = gc::GameState::GAME_MENU;
+                }
+                else
+                {
+                    std::cerr << "Failed to connect to server" << std::endl;
+                    return;
+                }
+            }
+            ImGui::End();
+
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+
+        if (waiting_for_connection && state_ == gc::GameState::GAME_MENU)
         {
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
@@ -557,7 +598,7 @@ class OnlineGame : public gc::Game
 
                     local_player_desc_ = PlayerDesc{ .pos{ 100.0f, 100.0f } };
                     sending_msg << local_player_desc_;
-                    client_.send(sending_msg);  
+                    client_.send(sending_msg);
 
                     break;
                 }
@@ -565,7 +606,9 @@ class OnlineGame : public gc::Game
                 {
                     // Server is assigning us out Id
                     msg >> local_player_desc_.unique_id;
-                    std::cout << "Assigned client Id = " << local_player_desc_.unique_id << "\n";
+                    std::cout
+                        << "Assigned client Id = " << local_player_desc_.unique_id
+                        << "\n";
                     break;
                 }
                 case GameMsgTypes::GameAddPlayer:
@@ -669,6 +712,7 @@ class OnlineGame : public gc::Game
     std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
     Client client_{};
     PlayerDesc local_player_desc_;
+    gc::GameState state_{ gc::GameState::GAME_LOBBY };
 
     bool waiting_for_connection{ true };
 };
