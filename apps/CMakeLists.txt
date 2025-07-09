@@ -28,6 +28,7 @@ target_link_libraries(GameClient
         GameCommon
         freetype
         NetCommon
+        imgui_backend
 )
 
 add_executable(GameServer Server/GameServer.cpp)
