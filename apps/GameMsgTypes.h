@@ -5,6 +5,7 @@
 enum class GameMsgTypes : u32 {
     ServerGetStatus,
     ServerGetPing,
+    ServerIsFull,
 
     ClientAccepted,
     ClientAssignId,

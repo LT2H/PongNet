@@ -252,7 +252,7 @@ class OnlineGame : public gc::Game
                 glm::vec2(width_, height_),
                 0.0f);
 
-            ImGui::Begin("");
+            ImGui::Begin("Connect to server");
             ImGui::Text("Enter server IP");
             ImGui::InputTextWithHint("##ServerIpInput",
                                      "e.g. 127.0.0.1",
@@ -273,6 +273,23 @@ class OnlineGame : public gc::Game
                 }
             }
             ImGui::End();
+
+            // Alert Server is full
+            if (show_server_full_popup_)
+            {
+                ImGui::OpenPopup("Alert");
+            }
+            if (ImGui::BeginPopupModal(
+                    "Alert", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("Server is full");
+                if (ImGui::Button("OK"))
+                {
+                    ImGui::CloseCurrentPopup();
+                    show_server_full_popup_ = false;
+                }
+                ImGui::EndPopup();
+            }
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -380,7 +397,6 @@ class OnlineGame : public gc::Game
         // Control of Player object
         if (state_ == gc::GameState::GAME_MENU)
         {
-            std::cout << "INSIDE GAME MENU\n";
             if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
             {
                 state_                          = gc::GameState::GAME_ACTIVE;
@@ -417,8 +433,6 @@ class OnlineGame : public gc::Game
 
         if (state_ == gc::GameState::GAME_ACTIVE)
         {
-            std::cout << "INSIDE GAME_ACTIVE\n";
-
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
@@ -611,6 +625,14 @@ class OnlineGame : public gc::Game
                         << "\n";
                     break;
                 }
+                case GameMsgTypes::ServerIsFull:
+                {
+                    client_.disconnect();
+                    map_objects_.clear();
+                    show_server_full_popup_ = true;
+                    state_                  = gc::GameState::GAME_CONNECT_TO_SERVER;
+                    break;
+                }
                 case GameMsgTypes::GameAddPlayer:
                 {
                     PlayerDesc player_desc{};
@@ -712,7 +734,8 @@ class OnlineGame : public gc::Game
     std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
     Client client_{};
     PlayerDesc local_player_desc_;
-    gc::GameState state_{ gc::GameState::GAME_LOBBY };
+    gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };
 
     bool waiting_for_connection{ true };
+    bool show_server_full_popup_{ false };
 };

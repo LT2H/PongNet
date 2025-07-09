@@ -73,25 +73,35 @@ class Server : public net::ServerInterface<GameMsgTypes>
             PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f } };
             msg >> player_desc;
 
-            player_desc.unique_id = client->id();
-            map_player_roster_.insert_or_assign(player_desc.unique_id, player_desc);
-
-            net::Message<GameMsgTypes> msg_send_id{};
-            msg_send_id.header.id = GameMsgTypes::ClientAssignId;
-            msg_send_id << player_desc.unique_id;
-            message_client(client, msg_send_id);
-
-            net::Message<GameMsgTypes> msg_add_player{};
-            msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
-            msg_add_player << player_desc;
-            message_all_clients(msg_add_player);
-
-            for (const auto& player : map_player_roster_)
+            if (map_player_roster_.size() < 2)
             {
-                net::Message<GameMsgTypes> msg_add_other_players{};
-                msg_add_other_players.header.id = GameMsgTypes::GameAddPlayer;
-                msg_add_other_players << player.second;
-                message_client(client, msg_add_other_players);
+                player_desc.unique_id = client->id();
+                map_player_roster_.insert_or_assign(player_desc.unique_id,
+                                                    player_desc);
+
+                net::Message<GameMsgTypes> msg_send_id{};
+                msg_send_id.header.id = GameMsgTypes::ClientAssignId;
+                msg_send_id << player_desc.unique_id;
+                message_client(client, msg_send_id);
+
+                net::Message<GameMsgTypes> msg_add_player{};
+                msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
+                msg_add_player << player_desc;
+                message_all_clients(msg_add_player);
+
+                for (const auto& player : map_player_roster_)
+                {
+                    net::Message<GameMsgTypes> msg_add_other_players{};
+                    msg_add_other_players.header.id = GameMsgTypes::GameAddPlayer;
+                    msg_add_other_players << player.second;
+                    message_client(client, msg_add_other_players);
+                }
+            }
+            else
+            {
+                net::Message<GameMsgTypes> msg_server_is_full{};
+                msg_server_is_full.header.id = GameMsgTypes::ServerIsFull;
+                message_client(client, msg_server_is_full);
             }
             break;
         }
