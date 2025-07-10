@@ -125,6 +125,11 @@ class Server : public net::ServerInterface<GameMsgTypes>
             message_all_clients(msg, client);
             break;
         }
+        case GameMsgTypes::GameUpdateBall:
+        {
+            message_all_clients(msg, client);
+            break;
+        }
         }
     }
 

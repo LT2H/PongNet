@@ -3,6 +3,7 @@
 #include <GameCommon/Game.h>
 #include <GameCommon/Player.h>
 #include "Client.h"
+#include "GameCommon/BallDesc.h"
 #include "GameCommon/BallObject.h"
 #include "NetCommon/NetMessage.h"
 #include <GameCommon/ResourceManager.h>
@@ -149,13 +150,23 @@ class OnlineGame : public gc::Game
         //     3, player_pos, player_size_,
         //     gc::ResourceManager::get_texture("paddle"));
 
-        glm::vec2 ball_pos{ player_pos +
-                            glm::vec2{ player_size_.x / 2.0f - ball_radius_,
-                                       -ball_radius_ * 2.0f } };
+        // glm::vec2 ball_pos{ player_pos +
+        //                     glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+        //                                -ball_radius_ * 2.0f } };
 
         // // local_player2_ = std::make_unique<gc::Player>(
         // //     3, player_pos, player_size_,
         // //     gc::ResourceManager::get_texture("paddle"));
+
+        // ball_ = std::make_shared<gc::BallObject>(
+        //     ball_pos,
+        //     ball_radius_,
+        //     initial_ball_velocity_,
+        //     gc::ResourceManager::get_texture("face"));
+
+        glm::vec2 ball_pos{ player_pos +
+                            glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                       -ball_radius_ * 2.0f } };
 
         ball_ = std::make_shared<gc::BallObject>(
             ball_pos,
@@ -236,7 +247,7 @@ class OnlineGame : public gc::Game
         glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
                                          height_ - player_size_.y } };
 
-        map_objects_[id] = std::make_shared<gc::Player>(
+        map_players_[id] = std::make_shared<gc::Player>(
             3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
     }
 
@@ -295,6 +306,8 @@ class OnlineGame : public gc::Game
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            return;
         }
 
         if (waiting_for_connection && state_ == gc::GameState::GAME_MENU)
@@ -325,7 +338,7 @@ class OnlineGame : public gc::Game
             levels_[current_level_].draw(*sprite_renderer_);
 
             // Draw World Objs
-            for (auto& pair : map_objects_)
+            for (auto& pair : map_players_)
             {
                 if (pair.second)
                 {
@@ -333,7 +346,7 @@ class OnlineGame : public gc::Game
                 }
             }
             // local_player_->draw(*sprite_renderer_);
-            // for (auto& pair : map_objects_)
+            // for (auto& pair : map_players_)
             // {
             //     pair.second->draw(*sprite_renderer_);
             // }
@@ -346,7 +359,10 @@ class OnlineGame : public gc::Game
             // }
 
             // particles_->draw();
-            ball_->draw(*sprite_renderer_);
+            if (ball_)
+            {
+                ball_->draw(*sprite_renderer_);
+            }
 
             // effects_->end_render();
             // effects_->render(glfwGetTime());
@@ -399,11 +415,11 @@ class OnlineGame : public gc::Game
         // Control of Player object
         if (state_ == gc::GameState::GAME_MENU)
         {
-            if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
-            {
-                state_                          = gc::GameState::GAME_ACTIVE;
-                keys_processed_[GLFW_KEY_ENTER] = true;
-            }
+            // if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+            // {
+            //     state_                          = gc::GameState::GAME_ACTIVE;
+            //     keys_processed_[GLFW_KEY_ENTER] = true;
+            // }
             if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
             {
                 current_level_              = (current_level_ + 1) % 4;
@@ -439,9 +455,9 @@ class OnlineGame : public gc::Game
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (map_objects_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
+                if (map_players_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
                 {
-                    map_objects_[local_player_desc_.unique_id]->pos_.x -= velocity;
+                    map_players_[local_player_desc_.unique_id]->pos_.x -= velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x -= velocity;
@@ -450,10 +466,10 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (map_objects_[local_player_desc_.unique_id]->pos_.x <=
-                    width_ - map_objects_[local_player_desc_.unique_id]->size_.x)
+                if (map_players_[local_player_desc_.unique_id]->pos_.x <=
+                    width_ - map_players_[local_player_desc_.unique_id]->size_.x)
                 {
-                    map_objects_[local_player_desc_.unique_id]->pos_.x += velocity;
+                    map_players_[local_player_desc_.unique_id]->pos_.x += velocity;
                     if (ball_->stuck_)
                     {
                         ball_->pos_.x += velocity;
@@ -630,7 +646,7 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::ServerIsFull:
                 {
                     client_.disconnect();
-                    map_objects_.clear();
+                    map_players_.clear();
                     show_server_full_popup_ = true;
                     state_                  = gc::GameState::GAME_CONNECT_TO_SERVER;
                     break;
@@ -639,7 +655,7 @@ class OnlineGame : public gc::Game
                 {
                     PlayerDesc player_desc{};
                     msg >> player_desc;
-                    if (!map_objects_.contains(player_desc.unique_id))
+                    if (!map_players_.contains(player_desc.unique_id))
                     {
                         auto player{ std::make_shared<gc::Player>(
                             3,
@@ -647,7 +663,7 @@ class OnlineGame : public gc::Game
                             player_size_,
                             gc::ResourceManager::get_texture("paddle")) };
                         player->set_props(player_desc);
-                        map_objects_.insert_or_assign(player->unique_id_, player);
+                        map_players_.insert_or_assign(player->unique_id_, player);
                     }
 
                     if (player_desc.unique_id == local_player_desc_.unique_id &&
@@ -662,7 +678,7 @@ class OnlineGame : public gc::Game
                 {
                     u32 removal_id{ 0 };
                     msg >> removal_id;
-                    map_objects_.erase(removal_id);
+                    map_players_.erase(removal_id);
                     break;
                 }
                 case GameMsgTypes::GameUpdatePlayer:
@@ -677,11 +693,23 @@ class OnlineGame : public gc::Game
                         gc::ResourceManager::get_texture("paddle")) };
                     player->set_props(player_desc);
 
-                    map_objects_.insert_or_assign(player->unique_id_, player);
+                    map_players_.insert_or_assign(player->unique_id_, player);
                     break;
                 }
                 case GameMsgTypes::GameAddBall:
                 {
+                    draw_ball_ = true;
+                    break;
+                }
+                case GameMsgTypes::GameUpdateBall:
+                {
+                    BallDesc ball_desc{};
+                    msg >> ball_desc;
+
+                    // std::cout << ball_desc.radius << " " << ball_desc.stuck << " "
+                    //           << ball_desc.radius << "\n";
+                    ball_->set_props(ball_desc);
+
                     break;
                 }
                 }
@@ -689,7 +717,10 @@ class OnlineGame : public gc::Game
         }
 
         // update objects locally
-        ball_->move(dt, width_, height_);
+        if (ball_)
+        {
+            ball_->move(dt, width_, height_);
+        }
 
         // Check for collisions
         // do_collisions();
@@ -726,23 +757,37 @@ class OnlineGame : public gc::Game
         // }
 
         // Send our player desc
-        net::Message<GameMsgTypes> msg{};
-        msg.header.id = GameMsgTypes::GameUpdatePlayer;
-        if (map_objects_.contains(local_player_desc_.unique_id))
+        if (map_players_.contains(local_player_desc_.unique_id))
         {
-            msg << map_objects_[local_player_desc_.unique_id]->get_desc();
+            net::Message<GameMsgTypes> msg{};
+            msg.header.id = GameMsgTypes::GameUpdatePlayer;
+            msg << map_players_[local_player_desc_.unique_id]->get_desc();
             client_.send(msg);
         }
+
+        // Send out ball desc
+        if (ball_ && draw_ball_)
+        {
+            net::Message<GameMsgTypes> msg_ball_update{};
+            msg_ball_update.header.id = GameMsgTypes::GameUpdateBall;
+            msg_ball_update << ball_->get_desc();
+            // std::cout << ball_->get_desc().radius << " " <<
+            // ball_->get_desc().stuck << " " << ball_->get_desc().radius << "\n";
+            client_.send(msg_ball_update);
+        }
+
         return true;
     }
 
   private:
-    std::unordered_map<u32, std::shared_ptr<gc::Player>> map_objects_{};
+    std::unordered_map<u32, std::shared_ptr<gc::Player>> map_players_{};
     std::shared_ptr<gc::BallObject> ball_;
     Client client_{};
     PlayerDesc local_player_desc_;
+    BallDesc local_ball_desc_;
     gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };
 
     bool waiting_for_connection{ true };
+    bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
 };
