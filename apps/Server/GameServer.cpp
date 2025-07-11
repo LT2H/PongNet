@@ -90,9 +90,23 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
                 net::Message<GameMsgTypes> msg_add_player{};
                 msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
+
+                glm::vec2 player_pos{
+                    glm::vec2{ client_screen_info_.width / 2.0f -
+                                   map_player_roster_[player_desc.unique_id].size.x /
+                                       2.0f,
+                               0 },
+                }; // position for player 2
+
                 if (!has_player_one_)
                 {
-                    player_desc.pos = glm::vec2{ 500.0f, 500.0f };
+                    player_pos = glm::vec2{
+                        client_screen_info_.width / 2.0f -
+                            map_player_roster_[player_desc.unique_id].size.x / 2.0f,
+                        client_screen_info_.height -
+                            map_player_roster_[player_desc.unique_id].size.y
+                    }; // Set the position for player 1
+
                     has_player_one_ = true;
                 }
                 else
@@ -101,7 +115,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     const glm::vec2 player_size{ 100.0f, 20.0f };
                     const float player_velocity{ 500.0f };
 
-                    glm::vec2 player_pos{ glm::vec2{
+                    glm::vec2 player1_pos{ glm::vec2{
                         map_player_roster_[player_desc.unique_id].screen_info.width /
                                 2.0f -
                             player_size.x / 2.0f,
@@ -110,8 +124,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
                             player_size.y } };
 
                     glm::vec2 ball_pos{
-                        player_pos + glm::vec2{ player_size.x / 2.0f - ball_radius_,
-                                                -ball_radius_ * 2.0f }
+                        player1_pos + glm::vec2{ player_size.x / 2.0f - ball_radius_,
+                                                 -ball_radius_ * 2.0f }
                     };
 
                     ball_ = { ball_radius_,
@@ -125,6 +139,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     msg_add_ball << ball_;
                     message_all_clients(msg_add_ball);
                 }
+                player_desc.pos = player_pos;
                 msg_add_player << player_desc;
                 message_all_clients(msg_add_player);
 
