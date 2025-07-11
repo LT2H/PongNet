@@ -719,6 +719,11 @@ class OnlineGame : public gc::Game
 
                     break;
                 }
+                case GameMsgTypes::GamePlayPadSound:
+                {
+                    ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+                    break;
+                }
                 }
             }
         }
@@ -780,7 +785,6 @@ class OnlineGame : public gc::Game
     std::shared_ptr<gc::BallObject> ball_;
     Client client_{};
     PlayerDesc local_player_desc_;
-    BallDesc local_ball_desc_;
     gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };
 
     bool waiting_for_connection{ true };

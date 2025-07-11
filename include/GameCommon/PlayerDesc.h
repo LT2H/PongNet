@@ -3,6 +3,11 @@
 #include <GameCommon/Common.h>
 #include <GameCommon/ScreenInfo.h>
 
+enum class PlayerNumber{
+    One,
+    Two,
+};
+
 struct PlayerDesc
 {
     u32 unique_id;
@@ -10,4 +15,5 @@ struct PlayerDesc
     glm::vec2 pos{ 0.0f, 0.0f };
     glm::vec2 size{ 100.0f, 20.0f };
     ScreenInfo screen_info{};
+    PlayerNumber player_number{ PlayerNumber::One };
 };

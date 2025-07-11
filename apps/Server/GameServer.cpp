@@ -83,7 +83,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
             PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f } };
             msg >> player_desc;
 
-            client_screen_info_ = player_desc.screen_info;
+            temp_player_info_ = player_desc;
 
             if (map_player_roster_.size() < 2)
             {
@@ -100,7 +100,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 msg_add_player.header.id = GameMsgTypes::GameAddPlayer;
 
                 glm::vec2 player_pos{
-                    glm::vec2{ client_screen_info_.width / 2.0f -
+                    glm::vec2{ temp_player_info_.screen_info.width / 2.0f -
                                    map_player_roster_[player_desc.unique_id].size.x /
                                        2.0f,
                                0 },
@@ -109,16 +109,20 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 if (!has_player_one_)
                 {
                     player_pos = glm::vec2{
-                        client_screen_info_.width / 2.0f -
+                        temp_player_info_.screen_info.width / 2.0f -
                             map_player_roster_[player_desc.unique_id].size.x / 2.0f,
-                        client_screen_info_.height -
+                        temp_player_info_.screen_info.height -
                             map_player_roster_[player_desc.unique_id].size.y
                     }; // Set the position for player 1
 
                     has_player_one_ = true;
+                    map_player_roster_[player_desc.unique_id].player_number =
+                        PlayerNumber::One;
                 }
                 else
                 {
+                    map_player_roster_[player_desc.unique_id].player_number =
+                        PlayerNumber::Two;
                     // Also add the ball now that we have 2 players
                     const glm::vec2 player_size{ 100.0f, 20.0f };
                     const float player_velocity{ 500.0f };
@@ -173,8 +177,15 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
         case GameMsgTypes::GameUpdatePlayer:
         {
+            PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f } };
+            msg >> player_desc;
+            temp_player_info_ = player_desc;
+
             // Bounce update to everyone except incoming client
-            message_all_clients(msg, client);
+            net::Message<GameMsgTypes> msg_bounce{};
+            msg_bounce.header.id = GameMsgTypes::GameUpdatePlayer;
+            msg_bounce << player_desc;
+            message_all_clients(msg_bounce, client);
             break;
         }
         case GameMsgTypes::GamePlayerLaunchBall:
@@ -185,8 +196,128 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
     }
 
+    void do_collisions()
+    {
+        // // and finally check collisions for player 1 pad (unless stuck)
+        gc::Collision result{ check_collision(ball_, temp_player_info_) };
+        if (map_player_roster_.contains(temp_player_info_.unique_id) &&
+            map_player_roster_[temp_player_info_.unique_id].player_number ==
+                PlayerNumber::One)
+        {
+            if (!ball_.stuck && std::get<0>(result))
+            {
+                // check where it hit the board, and change velocity based on where
+                // it hit the board
+                float center_board{ temp_player_info_.pos.x +
+                                    temp_player_info_.size.x / 2.0f };
+                float distance{ ball_.pos.x + ball_.radius - center_board };
+                float percentage{ distance / (temp_player_info_.size.x / 2.0f) };
+
+                // then move accordingly
+                float strength{ 2.0f };
+                glm::vec2 old_velocity{ ball_.velocity };
+                ball_.velocity.x = initial_ball_velocity_.x * percentage * strength;
+                // ball_.velocity.y = -ball_.velocity.y;
+                ball_.velocity.y =
+                    -1.0f * abs(ball_.velocity.y); // avoid sticky paddle issue
+                ball_.velocity =
+                    glm::normalize(ball_.velocity) * glm::length(old_velocity);
+
+                // ball_.stuck = ball_.sticky;
+
+                // ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+                net::Message<GameMsgTypes> msg_play_pad_sound{};
+                msg_play_pad_sound.header.id = GameMsgTypes::GamePlayPadSound;
+                message_all_clients(msg_play_pad_sound);
+            }
+        }
+
+        if (map_player_roster_.contains(temp_player_info_.unique_id) &&
+            map_player_roster_[temp_player_info_.unique_id].player_number ==
+                PlayerNumber::Two)
+        {
+            if (!ball_.stuck && std::get<0>(result))
+            {
+                // check where it hit the board, and change velocity based on where
+                // it hit the board
+                float center_board{ temp_player_info_.pos.x +
+                                    temp_player_info_.size.x / 2.0f };
+                float distance{ ball_.pos.x + ball_.radius - center_board };
+                float percentage{ distance / (temp_player_info_.size.x / 2.0f) };
+
+                // then move accordingly
+                float strength{ 2.0f };
+                glm::vec2 old_velocity{ ball_.velocity };
+                ball_.velocity.x = initial_ball_velocity_.x * percentage * strength;
+                // ball_.velocity.y = -ball_.velocity.y;
+                ball_.velocity.y =
+                    -1.0f * abs(ball_.velocity.y); // avoid sticky paddle issue
+                ball_.velocity =
+                    glm::normalize(-ball_.velocity) *
+                    glm::length(old_velocity); // Flip the velocity_ of the player 2
+                                               // pad to shoot the ball downward
+
+                                               // ball_->stuck_ = ball_->sticky_;
+
+                // ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+                net::Message<GameMsgTypes> msg_play_pad_sound{};
+                msg_play_pad_sound.header.id = GameMsgTypes::GamePlayPadSound;
+                message_all_clients(msg_play_pad_sound);
+            }
+        }
+        // check collisions for player 2 pad
+    }
+
+
+    gc::Collision check_collision(const BallDesc& one, const PlayerDesc& two)
+    {
+        // get center point circle first
+        glm::vec2 center{ one.pos + one.radius };
+        // calculate AABB info (center, half-extents)
+        glm::vec2 aabb_half_extents{ two.size.x / 2.0f, two.size.y / 2.0f };
+        glm::vec2 aabb_center{ two.pos.x + aabb_half_extents.x,
+                               two.pos.y + aabb_half_extents.y };
+        // get difference vector between both centers
+        glm::vec2 difference{ center - aabb_center };
+        glm::vec2 clamped{ glm::clamp(
+            difference, -aabb_half_extents, aabb_half_extents) };
+        // add clamped value to AABB_center and we get the value of box closest to
+        // circle
+        glm::vec2 closest{ aabb_center + clamped };
+        // retrieve vector between center circle and closest point AABB and check if
+        // length <= radius
+        difference = closest - center;
+        if (glm::length(difference) <= one.radius)
+            return std::make_tuple(true, vector_direction(difference), difference);
+        else
+            return std::make_tuple(false, gc::Direction::UP, glm::vec2(0.0f, 0.0f));
+    }
+
+    gc::Direction vector_direction(const glm::vec2& target)
+    {
+        std::array<glm::vec2, 4> compass{
+            glm::vec2(0.0f, 1.0f),  // up
+            glm::vec2(1.0f, 0.0f),  // right
+            glm::vec2(0.0f, -1.0f), // down
+            glm::vec2(-1.0f, 0.0f)  // left
+        };
+
+        float max{ 0.0f };
+        u32 best_match{ 4294967295 };
+        for (u32 i{ 0 }; i < 4; ++i)
+        {
+            float dot_product{ glm::dot(glm::normalize(target), compass[i]) };
+            if (dot_product > max)
+            {
+                max        = dot_product;
+                best_match = i;
+            }
+        }
+        return static_cast<gc::Direction>(best_match);
+    }
+
   public:
-    void update(size_t max_messages, bool wait)
+    void update(size_t max_messages, bool wait) override
     {
         if (wait)
             messages_in_.wait();
@@ -195,15 +326,15 @@ class Server : public net::ServerInterface<GameMsgTypes>
         // calculate delta time
         double delta_time{ 0.0 };
         double current_frame = glfwGetTime();
-        delta_time = current_frame - last_frame_;
-        last_frame_ = current_frame;
+        delta_time           = current_frame - last_frame_;
+        last_frame_          = current_frame;
         while (message_count < max_messages && !messages_in_.empty())
         {
 
             // Grab the front message
             auto msg{ messages_in_.pop_front() };
 
-            tick(client_screen_info_, delta_time);
+            tick(delta_time);
             // Pass to message handler
             on_message(msg.remote, msg.msg);
 
@@ -212,13 +343,14 @@ class Server : public net::ServerInterface<GameMsgTypes>
     }
 
   private:
-    void tick(ScreenInfo screen_info, float dt)
+    void tick(float dt)
     {
-        update_ball(screen_info, dt);
+        update_ball(dt);
+        do_collisions();
         broadcast_game_state();
     }
 
-    void update_ball(ScreenInfo screen_info, float dt)
+    void update_ball(float dt)
     {
         // if not stuck to player board
         if (!ball_.stuck)
@@ -232,20 +364,22 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 ball_.velocity.x = -ball_.velocity.x;
                 ball_.pos.x      = 0.0f;
             }
-            else if (ball_.pos.x + ball_.size.x >= screen_info.width)
+            else if (ball_.pos.x + ball_.size.x >=
+                     temp_player_info_.screen_info.width)
             {
                 ball_.velocity.x = -ball_.velocity.x;
-                ball_.pos.x      = screen_info.width - ball_.size.x;
+                ball_.pos.x = temp_player_info_.screen_info.width - ball_.size.x;
             }
             if (ball_.pos.y <= 0.0f)
             {
                 ball_.velocity.y = -ball_.velocity.y;
                 ball_.pos.y      = 0.0f;
             }
-            else if (ball_.pos.y + ball_.size.y >= screen_info.height)
+            else if (ball_.pos.y + ball_.size.y >=
+                     temp_player_info_.screen_info.height)
             {
                 ball_.velocity.y = -ball_.velocity.y;
-                ball_.pos.y      = screen_info.height - ball_.size.y;
+                ball_.pos.y = temp_player_info_.screen_info.height - ball_.size.y;
             }
         }
     }
@@ -265,7 +399,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     bool has_player_one_{ false };
     const glm::vec2 initial_ball_velocity_{ 100.0f, -350.0f };
     const float ball_radius_{ 12.5f };
-    ScreenInfo client_screen_info_{};
+    PlayerDesc temp_player_info_{};
 
     double last_frame_{ 0.0 };
 };
