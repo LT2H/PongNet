@@ -12,7 +12,6 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
-#include <memory>
 
 class OnlineGame : public gc::Game
 {
@@ -36,7 +35,8 @@ class OnlineGame : public gc::Game
 
         // glfw window creation
         // --------------------
-        window_ = glfwCreateWindow(width_, height_, "Pong Net", nullptr, nullptr);
+        window_ = glfwCreateWindow(
+            screen_info_.width, screen_info_.height, "Pong Net", nullptr, nullptr);
         if (!window_)
         {
             std::cout << "Failed to create GLFW window" << std::endl;
@@ -58,7 +58,7 @@ class OnlineGame : public gc::Game
 
         // OpenGL configuration
         // --------------------
-        glViewport(0, 0, width_, height_);
+        glViewport(0, 0, screen_info_.width, screen_info_.height);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -76,8 +76,8 @@ class OnlineGame : public gc::Game
 
         // configure shaders
         glm::mat4 projection{ glm::ortho(0.0f,
-                                         static_cast<float>(width_),
-                                         static_cast<float>(height_),
+                                         static_cast<float>(screen_info_.width),
+                                         static_cast<float>(screen_info_.height),
                                          0.0f,
                                          -1.0f,
                                          1.0f) };
@@ -124,17 +124,21 @@ class OnlineGame : public gc::Game
             gc::ResourceManager::get_texture("particle"),
             500);
         effects_ = std::make_unique<gc::PostProcessor>(
-            gc::ResourceManager::get_shader("postprocessing"), width_, height_);
+            gc::ResourceManager::get_shader("postprocessing"),
+            screen_info_.width,
+            screen_info_.height);
 
         // Load levels
         gc::GameLevel one;
-        one.load("res/levels/one.lvl", width_, height_ / 2);
+        one.load("res/levels/one.lvl", screen_info_.width, screen_info_.height / 2);
         gc::GameLevel two;
-        two.load("res/levels/two.lvl", width_, height_ / 2);
+        two.load("res/levels/two.lvl", screen_info_.width, screen_info_.height / 2);
         gc::GameLevel three;
-        three.load("res/levels/three.lvl", width_, height_ / 2);
+        three.load(
+            "res/levels/three.lvl", screen_info_.width, screen_info_.height / 2);
         gc::GameLevel four;
-        four.load("res/levels/four.lvl", width_, height_ / 2);
+        four.load(
+            "res/levels/four.lvl", screen_info_.width, screen_info_.height / 2);
 
         levels_.push_back(one);
         levels_.push_back(two);
@@ -143,8 +147,9 @@ class OnlineGame : public gc::Game
 
         // configure game objects
         // Player 1
-        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-                                         height_ - player_size_.y } };
+        glm::vec2 player_pos{ glm::vec2{ screen_info_.width / 2.0f -
+                                             player_size_.x / 2.0f,
+                                         screen_info_.height - player_size_.y } };
 
         // player1_ = std::make_unique<gc::Player>(
         //     3, player_pos, player_size_,
@@ -174,7 +179,8 @@ class OnlineGame : public gc::Game
             initial_ball_velocity_,
             gc::ResourceManager::get_texture("face"));
 
-        text_ = std::make_unique<gc::TextRender>(width_, height_);
+        text_ = std::make_unique<gc::TextRender>(screen_info_.width,
+                                                 screen_info_.height);
         text_->load("res/fonts/OCRAEXT.TTF", font_size_);
 
         // Main Menu theme
@@ -242,15 +248,6 @@ class OnlineGame : public gc::Game
         glfwTerminate();
     }
 
-    void create_player(u32 id)
-    {
-        glm::vec2 player_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-                                         height_ - player_size_.y } };
-
-        map_players_[id] = std::make_shared<gc::Player>(
-            3, player_pos, player_size_, gc::ResourceManager::get_texture("paddle"));
-    }
-
     void render() override
     {
         if (state_ == gc::GameState::GAME_CONNECT_TO_SERVER)
@@ -262,7 +259,7 @@ class OnlineGame : public gc::Game
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
-                glm::vec2(width_, height_),
+                glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
 
             ImGui::Begin("Connect to server");
@@ -315,11 +312,12 @@ class OnlineGame : public gc::Game
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
-                glm::vec2(width_, height_),
+                glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
             levels_[current_level_].draw(*sprite_renderer_);
 
-            text_->render_text("WAITING TO CONNECT...", 100.0f, height_ / 2, 2.0f);
+            text_->render_text(
+                "WAITING TO CONNECT...", 100.0f, screen_info_.height / 2, 2.0f);
             return;
         }
 
@@ -331,7 +329,7 @@ class OnlineGame : public gc::Game
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
-                glm::vec2(width_, height_),
+                glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
 
             // Draw level
@@ -359,7 +357,7 @@ class OnlineGame : public gc::Game
             // }
 
             // particles_->draw();
-            if (ball_)
+            if (draw_ball_)
             {
                 ball_->draw(*sprite_renderer_);
             }
@@ -375,14 +373,18 @@ class OnlineGame : public gc::Game
             // ss.clear();
             // ss << player1_->lives_;
             // text_->render_text(
-            //     "Lives " + ss.str(), 5.0f, height_ - font_size_, 1.0f);
+            //     "Lives " + ss.str(), 5.0f, screen_info_.height -
+            //     font_size_, 1.0f);
         }
 
         if (state_ == gc::GameState::GAME_MENU)
         {
-            text_->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
             text_->render_text(
-                "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
+                "Press ENTER to start", 250.0f, screen_info_.height / 2, 1.0f);
+            text_->render_text("Press W or S to select level",
+                               245.0f,
+                               screen_info_.height / 2 + 20.0f,
+                               0.75f);
         }
 
         if (state_ == gc::GameState::GAME_WIN)
@@ -399,12 +401,12 @@ class OnlineGame : public gc::Game
 
             text_->render_text(winner + " WON!",
                                320.0,
-                               height_ / 2 - 20.0,
+                               screen_info_.height / 2 - 20.0,
                                1.0,
                                glm::vec3(0.0, 1.0, 0.0));
             text_->render_text("Press ENTER to retry or ESC to quit",
                                130.0,
-                               height_ / 2,
+                               screen_info_.height / 2,
                                1.0,
                                glm::vec3(1.0, 1.0, 0.0));
         }
@@ -415,11 +417,11 @@ class OnlineGame : public gc::Game
         // Control of Player object
         if (state_ == gc::GameState::GAME_MENU)
         {
-            // if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
-            // {
-            //     state_                          = gc::GameState::GAME_ACTIVE;
-            //     keys_processed_[GLFW_KEY_ENTER] = true;
-            // }
+            if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+            {
+                state_                          = gc::GameState::GAME_ACTIVE;
+                keys_processed_[GLFW_KEY_ENTER] = true;
+            }
             if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
             {
                 current_level_              = (current_level_ + 1) % 4;
@@ -467,7 +469,8 @@ class OnlineGame : public gc::Game
             if (keys_[GLFW_KEY_D])
             {
                 if (map_players_[local_player_desc_.unique_id]->pos_.x <=
-                    width_ - map_players_[local_player_desc_.unique_id]->size_.x)
+                    screen_info_.width -
+                        map_players_[local_player_desc_.unique_id]->size_.x)
                 {
                     map_players_[local_player_desc_.unique_id]->pos_.x += velocity;
                     if (ball_->stuck_)
@@ -561,7 +564,7 @@ class OnlineGame : public gc::Game
             {
                 // first check if powerup passed bottom edge, if so: keep as inactive
                 // and destroy
-                if (powerup.pos_.y >= height_)
+                if (powerup.pos_.y >= screen_info_.height)
                 {
                     powerup.destroyed_ = true;
                 }
@@ -657,11 +660,14 @@ class OnlineGame : public gc::Game
                     msg >> player_desc;
                     if (!map_players_.contains(player_desc.unique_id))
                     {
-                        auto player{ std::make_shared<gc::Player>(
-                            3,
-                            glm::vec2{ 0.0f, 0.0f },
-                            player_size_,
-                            gc::ResourceManager::get_texture("paddle")) };
+                        auto player{
+                            std::make_shared<gc::Player>(
+                                3,
+                                glm::vec2{ 0.0f, 0.0f },
+                                player_size_,
+                                gc::ResourceManager::get_texture("paddle"),
+                                screen_info_),
+                        };
                         player->set_props(player_desc);
                         map_players_.insert_or_assign(player->unique_id_, player);
                     }
@@ -690,7 +696,8 @@ class OnlineGame : public gc::Game
                         3,
                         glm::vec2{ 0.0f, 0.0f },
                         player_size_,
-                        gc::ResourceManager::get_texture("paddle")) };
+                        gc::ResourceManager::get_texture("paddle"),
+                        screen_info_) };
                     player->set_props(player_desc);
 
                     map_players_.insert_or_assign(player->unique_id_, player);
@@ -706,8 +713,6 @@ class OnlineGame : public gc::Game
                     BallDesc ball_desc{};
                     msg >> ball_desc;
 
-                    // std::cout << ball_desc.radius << " " << ball_desc.stuck << " "
-                    //           << ball_desc.radius << "\n";
                     ball_->set_props(ball_desc);
 
                     break;
@@ -717,10 +722,10 @@ class OnlineGame : public gc::Game
         }
 
         // update objects locally
-        if (ball_)
-        {
-            ball_->move(dt, width_, height_);
-        }
+        // if (ball_)
+        // {
+        //     ball_->move(dt, screen_info_.width, screen_info_.height);
+        // }
 
         // Check for collisions
         // do_collisions();
@@ -741,7 +746,7 @@ class OnlineGame : public gc::Game
         // }
 
         // // reduce player 1 lives
-        // if (ball_->pos_.y >= height_ - ball_->size_.y)
+        // if (ball_->pos_.y >= screen_info_.height - ball_->size_.y)
         // {
         //     --player1_->lives_;
         // }
@@ -763,17 +768,6 @@ class OnlineGame : public gc::Game
             msg.header.id = GameMsgTypes::GameUpdatePlayer;
             msg << map_players_[local_player_desc_.unique_id]->get_desc();
             client_.send(msg);
-        }
-
-        // Send out ball desc
-        if (ball_ && draw_ball_)
-        {
-            net::Message<GameMsgTypes> msg_ball_update{};
-            msg_ball_update.header.id = GameMsgTypes::GameUpdateBall;
-            msg_ball_update << ball_->get_desc();
-            // std::cout << ball_->get_desc().radius << " " <<
-            // ball_->get_desc().stuck << " " << ball_->get_desc().radius << "\n";
-            client_.send(msg_ball_update);
         }
 
         return true;

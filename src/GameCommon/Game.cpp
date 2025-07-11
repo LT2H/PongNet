@@ -1,3 +1,4 @@
+#include "GameCommon/ScreenInfo.h"
 #include <GameCommon/TextRenderer.h>
 #include <GameCommon/GameObject.h>
 #include <GameCommon/Player.h>
@@ -13,7 +14,7 @@ std::array<bool, 1024> gc::Game::keys_{};
 std::array<bool, 1024> gc::Game::keys_processed_{};
 
 gc::Game::Game(u32 width, u32 height)
-    : state_{ GameState::GAME_MENU }, width_{ width }, height_{ height }
+    : state_{ GameState::GAME_MENU }, screen_info_{ width, height }
 {
     window_ = nullptr;
 }
@@ -34,9 +35,13 @@ bool gc::Game::init()
 #endif
     glfwWindowHint(GLFW_RESIZABLE, false);
 
-    // glfw window creation
+    // glfw window creationD
     // --------------------
-    window_ = glfwCreateWindow(width_, height_, "Breakout", nullptr, nullptr);
+    window_ = glfwCreateWindow(screen_info_.width,
+                               screen_info_.height,
+                               "Breakout",
+                               nullptr,
+                               nullptr);
     if (!window_)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -58,7 +63,7 @@ bool gc::Game::init()
 
     // OpenGL configuration
     // --------------------
-    glViewport(0, 0, width_, height_);
+    glViewport(0, 0, screen_info_.width, screen_info_.height);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -74,8 +79,8 @@ bool gc::Game::init()
 
     // configure shaders
     glm::mat4 projection{ glm::ortho(0.0f,
-                                     static_cast<float>(width_),
-                                     static_cast<float>(height_),
+                                     static_cast<float>(screen_info_.width),
+                                     static_cast<float>(screen_info_.height),
                                      0.0f,
                                      -1.0f,
                                      1.0f) };
@@ -118,17 +123,19 @@ bool gc::Game::init()
         ResourceManager::get_texture("particle"),
         500);
     effects_ = std::make_unique<PostProcessor>(
-        ResourceManager::get_shader("postprocessing"), width_, height_);
+        ResourceManager::get_shader("postprocessing"),
+        screen_info_.width,
+        screen_info_.height);
 
     // Load levels
     GameLevel one;
-    one.load("res/levels/one.lvl", width_, height_ / 2);
+    one.load("res/levels/one.lvl", screen_info_.width, screen_info_.height / 2);
     GameLevel two;
-    two.load("res/levels/two.lvl", width_, height_ / 2);
+    two.load("res/levels/two.lvl", screen_info_.width, screen_info_.height / 2);
     GameLevel three;
-    three.load("res/levels/three.lvl", width_, height_ / 2);
+    three.load("res/levels/three.lvl", screen_info_.width, screen_info_.height / 2);
     GameLevel four;
-    four.load("res/levels/four.lvl", width_, height_ / 2);
+    four.load("res/levels/four.lvl", screen_info_.width, screen_info_.height / 2);
 
     levels_.push_back(one);
     levels_.push_back(two);
@@ -137,14 +144,19 @@ bool gc::Game::init()
 
     // configure game objects
     // Player 1
-    glm::vec2 player1_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f,
-                                      height_ - player_size_.y } };
+    glm::vec2 player1_pos{ glm::vec2{ screen_info_.width / 2.0f -
+                                          player_size_.x / 2.0f,
+                                      screen_info_.height - player_size_.y } };
 
-    player1_ = std::make_unique<Player>(
-        3, player1_pos, player_size_, ResourceManager::get_texture("paddle"));
+    player1_ = std::make_unique<Player>(3,
+                                        player1_pos,
+                                        player_size_,
+                                        ResourceManager::get_texture("paddle"),
+                                        screen_info_);
 
-    glm::vec2 ball_pos{ player1_pos + glm::vec2{ player_size_.x / 2.0f - ball_radius_,
-                                                 -ball_radius_ * 2.0f } };
+    glm::vec2 ball_pos{ player1_pos +
+                        glm::vec2{ player_size_.x / 2.0f - ball_radius_,
+                                   -ball_radius_ * 2.0f } };
 
     ball_ = std::make_unique<BallObject>(ball_pos,
                                          ball_radius_,
@@ -152,12 +164,16 @@ bool gc::Game::init()
                                          ResourceManager::get_texture("face"));
 
     // Player 2
-    glm::vec2 player2_pos{ glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, 0 } };
+    glm::vec2 player2_pos{ glm::vec2{
+        screen_info_.width / 2.0f - player_size_.x / 2.0f, 0 } };
 
-    player2_ = std::make_unique<Player>(
-        3, player2_pos, player_size_, ResourceManager::get_texture("paddle"));
+    player2_ = std::make_unique<Player>(3,
+                                        player2_pos,
+                                        player_size_,
+                                        ResourceManager::get_texture("paddle"),
+                                        screen_info_);
 
-    text_ = std::make_unique<TextRender>(width_, height_);
+    text_ = std::make_unique<TextRender>(screen_info_.width, screen_info_.height);
     text_->load("res/fonts/OCRAEXT.TTF", font_size_);
 
     // Main Menu theme
@@ -274,7 +290,7 @@ void gc::Game::process_player1_input(float dt)
         }
         if (keys_[GLFW_KEY_D])
         {
-            if (player1_->pos_.x <= width_ - player1_->size_.x)
+            if (player1_->pos_.x <= screen_info_.width - player1_->size_.x)
             {
                 player1_->pos_.x += velocity;
                 if (ball_->stuck_)
@@ -341,7 +357,7 @@ void gc::Game::process_player2_input(float dt)
         }
         if (keys_[GLFW_KEY_RIGHT])
         {
-            if (player2_->pos_.x <= width_ - player2_->size_.x)
+            if (player2_->pos_.x <= screen_info_.width - player2_->size_.x)
             {
                 player2_->pos_.x += velocity;
             }
@@ -353,7 +369,7 @@ void gc::Game::process_player2_input(float dt)
 bool gc::Game::update(float dt)
 {
     // update objects
-    ball_->move(dt, width_, height_);
+    ball_->move(dt, screen_info_.width, screen_info_.height);
 
     // Check for collisions
     do_collisions();
@@ -374,7 +390,7 @@ bool gc::Game::update(float dt)
     }
 
     // reduce player 1 lives
-    if (ball_->pos_.y >= height_ - ball_->size_.y)
+    if (ball_->pos_.y >= screen_info_.height - ball_->size_.y)
     {
         --player1_->lives_;
     }
@@ -412,19 +428,23 @@ void gc::Game::reset_level()
 {
     if (current_level_ == 0)
     {
-        levels_[0].load("res/levels/one.lvl", width_, height_ / 2);
+        levels_[0].load(
+            "res/levels/one.lvl", screen_info_.width, screen_info_.height / 2);
     }
     else if (current_level_ == 1)
     {
-        levels_[1].load("res/levels/two.lvl", width_, height_ / 2);
+        levels_[1].load(
+            "res/levels/two.lvl", screen_info_.width, screen_info_.height / 2);
     }
     else if (current_level_ == 2)
     {
-        levels_[2].load("res/levels/three.lvl", width_, height_ / 2);
+        levels_[2].load(
+            "res/levels/three.lvl", screen_info_.width, screen_info_.height / 2);
     }
     else if (current_level_ == 3)
     {
-        levels_[3].load("res/levels/four.lvl", width_, height_ / 2);
+        levels_[3].load(
+            "res/levels/four.lvl", screen_info_.width, screen_info_.height / 2);
     }
 
     player1_->lives_ = 3;
@@ -437,8 +457,8 @@ void gc::Game::reset_players()
 {
     // reset player1_/ball_ stats
     player1_->size_ = player_size_;
-    player1_->pos_ =
-        glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, height_ - player_size_.y };
+    player1_->pos_  = glm::vec2{ screen_info_.width / 2.0f - player_size_.x / 2.0f,
+                                screen_info_.height - player_size_.y };
     ball_->reset(player1_->pos_ + glm::vec2{ player_size_.x / 2.0f - ball_radius_,
                                              -(ball_radius_ * 2.0f) },
                  initial_ball_velocity_);
@@ -451,8 +471,9 @@ void gc::Game::reset_players()
     ball_->color_       = glm::vec3{ 1.0f };
 
     // TODO: disable all active powerups for Player2?
-    player2_->size_  = player_size_;
-    player2_->pos_   = glm::vec2{ width_ / 2.0f - player_size_.x / 2.0f, 0 };
+    player2_->size_ = player_size_;
+    player2_->pos_ =
+        glm::vec2{ screen_info_.width / 2.0f - player_size_.x / 2.0f, 0 };
     player2_->color_ = glm::vec3{ 1.0f };
 }
 
@@ -464,10 +485,11 @@ void gc::Game::render()
     {
         effects_->begin_render();
         // Draw background
-        sprite_renderer_->draw_sprite(gc::ResourceManager::get_texture("background"),
-                                      glm::vec2(0.0f, 0.0f),
-                                      glm::vec2(width_, height_),
-                                      0.0f);
+        sprite_renderer_->draw_sprite(
+            gc::ResourceManager::get_texture("background"),
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(screen_info_.width, screen_info_.height),
+            0.0f);
 
         // Draw level
         levels_[current_level_].draw(*sprite_renderer_);
@@ -497,14 +519,18 @@ void gc::Game::render()
         ss.str("");
         ss.clear();
         ss << player1_->lives_;
-        text_->render_text("Lives " + ss.str(), 5.0f, height_ - font_size_, 1.0f);
+        text_->render_text(
+            "Lives " + ss.str(), 5.0f, screen_info_.height - font_size_, 1.0f);
     }
 
     if (state_ == GameState::GAME_MENU)
     {
-        text_->render_text("Press ENTER to start", 250.0f, height_ / 2, 1.0f);
         text_->render_text(
-            "Press W or S to select level", 245.0f, height_ / 2 + 20.0f, 0.75f);
+            "Press ENTER to start", 250.0f, screen_info_.height / 2, 1.0f);
+        text_->render_text("Press W or S to select level",
+                           245.0f,
+                           screen_info_.height / 2 + 20.0f,
+                           0.75f);
     }
 
     if (state_ == GameState::GAME_WIN)
@@ -521,12 +547,12 @@ void gc::Game::render()
 
         text_->render_text(winner + " WON!",
                            320.0,
-                           height_ / 2 - 20.0,
+                           screen_info_.height / 2 - 20.0,
                            1.0,
                            glm::vec3(0.0, 1.0, 0.0));
         text_->render_text("Press ENTER to retry or ESC to quit",
                            130.0,
-                           height_ / 2,
+                           screen_info_.height / 2,
                            1.0,
                            glm::vec3(1.0, 1.0, 0.0));
     }
@@ -550,7 +576,7 @@ void gc::Game::do_collisions()
                 }
                 else
                 { // if block is solid, enable shake effect
-                    shake_time_       = 0.05f;
+                    shake_time_      = 0.05f;
                     effects_->shake_ = true;
                     ma_engine_play_sound(&engine_, "res/audio/solid.mp3", nullptr);
                 }
@@ -606,7 +632,7 @@ void gc::Game::do_collisions()
         {
             // first check if powerup passed bottom edge, if so: keep as inactive and
             // destroy
-            if (powerup.pos_.y >= height_)
+            if (powerup.pos_.y >= screen_info_.height)
             {
                 powerup.destroyed_ = true;
             }

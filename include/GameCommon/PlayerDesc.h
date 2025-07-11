@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GameCommon/Common.h>
+#include <GameCommon/ScreenInfo.h>
 
 struct PlayerDesc
 {
@@ -8,4 +9,5 @@ struct PlayerDesc
     u32 lives{ 0 };
     glm::vec2 pos{ 0.0f, 0.0f };
     glm::vec2 size{ 100.0f, 20.0f };
+    ScreenInfo screen_info{};
 };

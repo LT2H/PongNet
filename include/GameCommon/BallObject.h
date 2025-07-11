@@ -21,14 +21,16 @@ class BallObject : public GameObject
 
     BallDesc get_desc() const
     {
-        return BallDesc{ radius_, stuck_, pos_ };
+        return BallDesc{ radius_, stuck_, pos_, velocity_ };
     }
 
     void set_props(const BallDesc ball_desc)
     {
-        radius_    = ball_desc.radius;
-        stuck_     = ball_desc.stuck;
-        pos_       = ball_desc.pos;
+        radius_   = ball_desc.radius;
+        stuck_    = ball_desc.stuck;
+        pos_      = ball_desc.pos;
+        velocity_ = ball_desc.velocity;
+        size_     = ball_desc.size;
     }
 
     glm::vec2 move(float dt, u32 window_width, u32 window_height);

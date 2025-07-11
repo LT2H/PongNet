@@ -7,6 +7,7 @@
 #include "PowerUp.h"
 #include "ParticleGenerator.h"
 #include "PostProcessor.h"
+#include "ScreenInfo.h"
 #include "TextRenderer.h"
 
 namespace gc
@@ -94,8 +95,9 @@ class Game
 
     Direction vector_direction(const glm::vec2& target);
 
-    u32 width_;
-    u32 height_;
+    // u32 width_;
+    // u32 height_;
+    ScreenInfo screen_info_;
 
     std::unique_ptr<BallObject> ball_;
 

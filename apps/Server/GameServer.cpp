@@ -3,6 +3,8 @@
 #include "../GameMsgTypes.h"
 #include <GameCommon/PlayerDesc.h>
 #include "GameCommon/ResourceManager.h"
+#include "GameCommon/Game.h"
+#include "GameCommon/ScreenInfo.h"
 #include "NetCommon/NetConnection.h"
 #include "NetCommon/NetMessage.h"
 #include "NetCommon/NetServer.h"
@@ -73,6 +75,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
             PlayerDesc player_desc{ 0, 3, { 0.0f, 0.0f } };
             msg >> player_desc;
 
+            client_screen_info_ = player_desc.screen_info;
+
             if (map_player_roster_.size() < 2)
             {
                 player_desc.unique_id = client->id();
@@ -90,11 +94,36 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 {
                     player_desc.pos = glm::vec2{ 500.0f, 500.0f };
                     has_player_one_ = true;
-
+                }
+                else
+                {
                     // Also add the ball now that we have 2 players
+                    const glm::vec2 player_size{ 100.0f, 20.0f };
+                    const float player_velocity{ 500.0f };
+
+                    glm::vec2 player_pos{ glm::vec2{
+                        map_player_roster_[player_desc.unique_id].screen_info.width /
+                                2.0f -
+                            player_size.x / 2.0f,
+                        map_player_roster_[player_desc.unique_id]
+                                .screen_info.height -
+                            player_size.y } };
+
+                    glm::vec2 ball_pos{
+                        player_pos + glm::vec2{ player_size.x / 2.0f - ball_radius_,
+                                                -ball_radius_ * 2.0f }
+                    };
+
+                    ball_ = { ball_radius_,
+                              true,
+                              ball_pos,
+                              initial_ball_velocity_,
+                              glm::vec2{ ball_radius_ * 2.0, ball_radius_ * 2.0 } };
+
                     net::Message<GameMsgTypes> msg_add_ball{};
                     msg_add_ball.header.id = GameMsgTypes::GameAddBall;
-                    message_client(client, msg_add_ball);
+                    msg_add_ball << ball_;
+                    message_all_clients(msg_add_ball);
                 }
                 msg_add_player << player_desc;
                 message_all_clients(msg_add_player);
@@ -125,12 +154,92 @@ class Server : public net::ServerInterface<GameMsgTypes>
             message_all_clients(msg, client);
             break;
         }
-        case GameMsgTypes::GameUpdateBall:
+            // case GameMsgTypes::GameUpdateBall:
+            // {
+            //     net::Message<GameMsgTypes> msg_update_ball{};
+            //     msg_update_ball.header.id = GameMsgTypes::GameUpdateBall;
+            //     msg_update_ball << ball_;
+            //     message_all_clients(msg);
+            //     break;
+            // }
+        }
+    }
+
+  public:
+    void update(size_t max_messages = 65535, bool wait = false) override
+    {
+        if (wait)
+            messages_in_.wait();
+
+        size_t message_count{ 0 };
+        // Delta time vars
+        double delta_time{ 0.0f };
+        double last_frame{ 0.0f };
+        while (message_count < max_messages && !messages_in_.empty())
         {
-            message_all_clients(msg, client);
-            break;
+
+            // Grab the front message
+            auto msg{ messages_in_.pop_front() };
+
+            // calculate delta time
+            double current_frame{ glfwGetTime() };
+            delta_time = current_frame - last_frame;
+            last_frame = current_frame;
+
+            tick(client_screen_info_, delta_time);
+            // Pass to message handler
+            on_message(msg.remote, msg.msg);
+
+            ++message_count;
         }
+    }
+
+  private:
+    void tick(ScreenInfo screen_info, float dt)
+    {
+        update_ball(screen_info, dt);
+        broadcast_game_state();
+    }
+
+    void update_ball(ScreenInfo screen_info, float dt)
+    {
+        // if not stuck to player board
+        if (!ball_.stuck)
+        {
+            // move the ball
+            ball_.pos += ball_.velocity * dt;
+
+            // check if outside window bounds; if so, reverse velocity and
+            // restore at correct pos
+            if (ball_.pos.x <= 0.0f)
+            {
+                ball_.velocity.x = -ball_.velocity.x;
+                ball_.pos.x      = 0.0f;
+            }
+            else if (ball_.pos.x + ball_.size.x >= screen_info.width)
+            {
+                ball_.velocity.x = -ball_.velocity.x;
+                ball_.pos.x      = screen_info.width - ball_.size.x;
+            }
+            if (ball_.pos.y <= 0.0f)
+            {
+                ball_.velocity.y = -ball_.velocity.y;
+                ball_.pos.y      = 0.0f;
+            }
+            else if (ball_.pos.y + ball_.size.y >= screen_info.height)
+            {
+                ball_.velocity.y = -ball_.velocity.y;
+                ball_.pos.y      = screen_info.height - ball_.size.y;
+            }
         }
+    }
+
+    void broadcast_game_state()
+    {
+        net::Message<GameMsgTypes> msg_update_ball{};
+        msg_update_ball.header.id = GameMsgTypes::GameUpdateBall;
+        msg_update_ball << ball_;
+        message_all_clients(msg_update_ball);
     }
 
   private:
@@ -138,6 +247,9 @@ class Server : public net::ServerInterface<GameMsgTypes>
     BallDesc ball_;
     std::vector<u32> garbage_ids_;
     bool has_player_one_{ false };
+    const glm::vec2 initial_ball_velocity_{ 100.0f, -350.0f };
+    const float ball_radius_{ 12.5f };
+    ScreenInfo client_screen_info_{};
 };
 
 int main()
