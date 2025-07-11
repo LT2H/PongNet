@@ -481,7 +481,10 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_SPACE])
             {
-                ball_->stuck_ = false;
+                net::Message<GameMsgTypes> msg_launch_ball{};
+                msg_launch_ball.header.id = GameMsgTypes::GamePlayerLaunchBall;
+                client_.send(msg_launch_ball);
+                // ball_->stuck_ = false;
             }
         }
     }
@@ -712,7 +715,6 @@ class OnlineGame : public gc::Game
                 {
                     BallDesc ball_desc{};
                     msg >> ball_desc;
-
                     ball_->set_props(ball_desc);
 
                     break;

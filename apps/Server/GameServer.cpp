@@ -13,7 +13,15 @@
 class Server : public net::ServerInterface<GameMsgTypes>
 {
   public:
-    Server(u16 port) : net::ServerInterface<GameMsgTypes>{ port } {}
+    Server(u16 port) : net::ServerInterface<GameMsgTypes>{ port }
+    {
+        if (!glfwInit())
+        {
+            std::cerr << "Failed to initialize GLFW\n";
+        }
+    }
+
+    ~Server() { glfwTerminate(); }
 
   protected:
     bool
@@ -169,37 +177,31 @@ class Server : public net::ServerInterface<GameMsgTypes>
             message_all_clients(msg, client);
             break;
         }
-            // case GameMsgTypes::GameUpdateBall:
-            // {
-            //     net::Message<GameMsgTypes> msg_update_ball{};
-            //     msg_update_ball.header.id = GameMsgTypes::GameUpdateBall;
-            //     msg_update_ball << ball_;
-            //     message_all_clients(msg);
-            //     break;
-            // }
+        case GameMsgTypes::GamePlayerLaunchBall:
+        {
+            ball_.stuck = false;
+            break;
+        }
         }
     }
 
   public:
-    void update(size_t max_messages = 65535, bool wait = false) override
+    void update(size_t max_messages, bool wait)
     {
         if (wait)
             messages_in_.wait();
 
         size_t message_count{ 0 };
-        // Delta time vars
-        double delta_time{ 0.0f };
-        double last_frame{ 0.0f };
+        // calculate delta time
+        double delta_time{ 0.0 };
+        double current_frame = glfwGetTime();
+        delta_time = current_frame - last_frame_;
+        last_frame_ = current_frame;
         while (message_count < max_messages && !messages_in_.empty())
         {
 
             // Grab the front message
             auto msg{ messages_in_.pop_front() };
-
-            // calculate delta time
-            double current_frame{ glfwGetTime() };
-            delta_time = current_frame - last_frame;
-            last_frame = current_frame;
 
             tick(client_screen_info_, delta_time);
             // Pass to message handler
@@ -223,7 +225,6 @@ class Server : public net::ServerInterface<GameMsgTypes>
         {
             // move the ball
             ball_.pos += ball_.velocity * dt;
-
             // check if outside window bounds; if so, reverse velocity and
             // restore at correct pos
             if (ball_.pos.x <= 0.0f)
@@ -265,6 +266,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
     const glm::vec2 initial_ball_velocity_{ 100.0f, -350.0f };
     const float ball_radius_{ 12.5f };
     ScreenInfo client_screen_info_{};
+
+    double last_frame_{ 0.0 };
 };
 
 int main()
