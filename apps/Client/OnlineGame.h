@@ -365,8 +365,6 @@ class OnlineGame : public gc::Game
             // effects_->end_render();
             // effects_->render(glfwGetTime());
 
-            // Show lives
-            // std::stringstream ss;
             // ss << player1_->lives_;
             // text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
             // ss.str("");
@@ -375,6 +373,26 @@ class OnlineGame : public gc::Game
             // text_->render_text(
             //     "Lives " + ss.str(), 5.0f, screen_info_.height -
             //     font_size_, 1.0f);
+
+            // Show lives
+            std::stringstream ss{};
+            for (const auto& player_desc : map_players_)
+            {
+                ss << player_desc.second->get_desc().lives;
+                if (player_desc.first == local_player_desc_.unique_id)
+                {
+                    text_->render_text("Lives " + ss.str(),
+                                       5.0f,
+                                       screen_info_.height - font_size_,
+                                       1.0f);
+                }
+                else
+                {
+                    text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
+                }
+                ss.str("");
+                ss.clear();
+            }
         }
 
         if (state_ == gc::GameState::GAME_MENU)
@@ -387,29 +405,29 @@ class OnlineGame : public gc::Game
                                0.75f);
         }
 
-        if (state_ == gc::GameState::GAME_WIN)
-        {
-            std::string winner{};
-            if (winner_ == gc::Winner::Player1)
-            {
-                winner = "PLAYER 1";
-            }
-            else if (winner_ == gc::Winner::Player2)
-            {
-                winner = "PLAYER 2";
-            }
+        // if (state_ == gc::GameState::GAME_WIN)
+        // {
+        //     std::string winner{};
+        //     if (winner_ == gc::Winner::Player1)
+        //     {
+        //         winner = "PLAYER 1";
+        //     }
+        //     else if (winner_ == gc::Winner::Player2)
+        //     {
+        //         winner = "PLAYER 2";
+        //     }
 
-            text_->render_text(winner + " WON!",
-                               320.0,
-                               screen_info_.height / 2 - 20.0,
-                               1.0,
-                               glm::vec3(0.0, 1.0, 0.0));
-            text_->render_text("Press ENTER to retry or ESC to quit",
-                               130.0,
-                               screen_info_.height / 2,
-                               1.0,
-                               glm::vec3(1.0, 1.0, 0.0));
-        }
+        //     text_->render_text(winner + " WON!",
+        //                        320.0,
+        //                        screen_info_.height / 2 - 20.0,
+        //                        1.0,
+        //                        glm::vec3(0.0, 1.0, 0.0));
+        //     text_->render_text("Press ENTER to retry or ESC to quit",
+        //                        130.0,
+        //                        screen_info_.height / 2,
+        //                        1.0,
+        //                        glm::vec3(1.0, 1.0, 0.0));
+        // }
     }
 
     void process_input(float dt)
@@ -460,10 +478,10 @@ class OnlineGame : public gc::Game
                 if (map_players_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
                 {
                     map_players_[local_player_desc_.unique_id]->pos_.x -= velocity;
-                    if (ball_->stuck_)
-                    {
-                        ball_->pos_.x -= velocity;
-                    }
+                    // if (ball_->stuck_)
+                    // {
+                    //     ball_->pos_.x -= velocity;
+                    // }
                 }
             }
             if (keys_[GLFW_KEY_D])
@@ -473,10 +491,10 @@ class OnlineGame : public gc::Game
                         map_players_[local_player_desc_.unique_id]->size_.x)
                 {
                     map_players_[local_player_desc_.unique_id]->pos_.x += velocity;
-                    if (ball_->stuck_)
-                    {
-                        ball_->pos_.x += velocity;
-                    }
+                    // if (ball_->stuck_)
+                    // {
+                    //     ball_->pos_.x += velocity;
+                    // }
                 }
             }
             if (keys_[GLFW_KEY_SPACE])

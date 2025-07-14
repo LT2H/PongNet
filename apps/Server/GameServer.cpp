@@ -181,6 +181,17 @@ class Server : public net::ServerInterface<GameMsgTypes>
             msg >> player_desc;
             temp_player_info_ = player_desc;
 
+            if (ball_.stuck &&
+                map_player_roster_[player_desc.unique_id].player_number ==
+                    PlayerNumber::One)
+            {
+                glm::vec2 ball_pos{ temp_player_info_.pos +
+                                    glm::vec2{ temp_player_info_.size.x / 2.0f -
+                                                   ball_radius_,
+                                               -ball_radius_ * 2.0f } };
+                ball_.pos = ball_pos;
+            }
+
             // Bounce update to everyone except incoming client
             net::Message<GameMsgTypes> msg_bounce{};
             msg_bounce.header.id = GameMsgTypes::GameUpdatePlayer;
@@ -324,9 +335,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
         size_t message_count{ 0 };
         // calculate delta time
-        double delta_time{ 0.0 };
         double current_frame = glfwGetTime();
-        delta_time           = current_frame - last_frame_;
+        delta_time_          = current_frame - last_frame_;
         last_frame_          = current_frame;
         while (message_count < max_messages && !messages_in_.empty())
         {
@@ -334,7 +344,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
             // Grab the front message
             auto msg{ messages_in_.pop_front() };
 
-            tick(delta_time);
+            tick(delta_time_);
             // Pass to message handler
             on_message(msg.remote, msg.msg);
 
@@ -399,8 +409,10 @@ class Server : public net::ServerInterface<GameMsgTypes>
     bool has_player_one_{ false };
     const glm::vec2 initial_ball_velocity_{ 100.0f, -350.0f };
     const float ball_radius_{ 12.5f };
+    const float player_velocity_{ 500.0f };
     PlayerDesc temp_player_info_{};
 
+    double delta_time_{ 0.0 };
     double last_frame_{ 0.0 };
 };
 
