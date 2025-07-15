@@ -20,7 +20,7 @@ enum class GameState
     GAME_ACTIVE,
     GAME_MENU,
     GAME_CONNECT_TO_SERVER,
-    GAME_WIN,
+    GAME_ENDS,
 };
 
 enum class Direction

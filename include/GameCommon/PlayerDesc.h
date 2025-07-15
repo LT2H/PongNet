@@ -4,6 +4,7 @@
 #include <GameCommon/ScreenInfo.h>
 
 enum class PlayerNumber{
+    Zero,
     One,
     Two,
 };

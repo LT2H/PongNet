@@ -370,7 +370,10 @@ class Server : public net::ServerInterface<GameMsgTypes>
   private:
     void tick(float dt)
     {
-        update_ball(dt);
+        if (!game_ended_)
+        {
+            update_ball(dt);
+        }
         do_collisions();
         broadcast_game_state();
     }
@@ -412,16 +415,38 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
     }
 
+    void broadcast_game_ends(PlayerNumber winner)
+    {
+        net::Message<GameMsgTypes> msg_game_ends{};
+        msg_game_ends.header.id = GameMsgTypes::GameEnds;
+        winner_                 = winner;
+        msg_game_ends << winner_;
+        message_all_clients(msg_game_ends);
+        game_ended_ = true;
+    }
+
     void broadcast_game_state()
     {
         // reduce player 1 and 2 lives
-        net::Message<GameMsgTypes> msg_reduce_lives{};
         PlayerDesc sending_player_desc{};
-        msg_reduce_lives.header.id = GameMsgTypes::GameReduceLives;
         for (auto& player_desc : map_player_roster_)
         {
             if (player_desc.second.player_number == PlayerNumber::One &&
-                ball_.pos.y >= player_desc.second.screen_info.height - ball_.size.y) 
+                player_desc.second.lives <= 0)
+            {
+                broadcast_game_ends(PlayerNumber::Two);
+                break;
+            }
+
+            if (player_desc.second.player_number == PlayerNumber::Two &&
+                player_desc.second.lives <= 0)
+            {
+                broadcast_game_ends(PlayerNumber::One);
+                break;
+            }
+
+            if (player_desc.second.player_number == PlayerNumber::One &&
+                ball_.pos.y >= player_desc.second.screen_info.height - ball_.size.y)
             {
                 --player_desc.second.lives;
                 sending_player_desc = player_desc.second;
@@ -436,6 +461,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 break;
             }
         }
+        net::Message<GameMsgTypes> msg_reduce_lives{};
+        msg_reduce_lives.header.id = GameMsgTypes::GameReduceLives;
         msg_reduce_lives << sending_player_desc;
         message_all_clients(msg_reduce_lives);
 
@@ -455,8 +482,12 @@ class Server : public net::ServerInterface<GameMsgTypes>
     const float player_velocity_{ 500.0f };
     u32 temp_player_id_{};
 
+    PlayerNumber winner_{ PlayerNumber::Zero };
+
     double delta_time_{ 0.0 };
     double last_frame_{ 0.0 };
+
+    bool game_ended_{ false };
 };
 
 int main()

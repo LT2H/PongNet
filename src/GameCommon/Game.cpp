@@ -263,7 +263,7 @@ void gc::Game::process_player1_input(float dt)
         }
     }
 
-    if (state_ == GameState::GAME_WIN)
+    if (state_ == GameState::GAME_ENDS)
     {
         if (keys_[GLFW_KEY_ENTER])
         {
@@ -334,7 +334,7 @@ void gc::Game::process_player2_input(float dt)
         }
     }
 
-    if (state_ == GameState::GAME_WIN)
+    if (state_ == GameState::GAME_ENDS)
     {
         if (keys_[GLFW_KEY_ENTER])
         {
@@ -407,7 +407,7 @@ bool gc::Game::update(float dt)
         reset_players();
         reset_level();
         effects_->chaos_ = true;
-        state_           = GameState::GAME_WIN;
+        state_           = GameState::GAME_ENDS;
         winner_          = Winner::Player1;
     }
 
@@ -417,7 +417,7 @@ bool gc::Game::update(float dt)
         reset_players();
         reset_level();
         effects_->chaos_ = true;
-        state_           = GameState::GAME_WIN;
+        state_           = GameState::GAME_ENDS;
         winner_          = Winner::Player2;
     }
 
@@ -481,7 +481,7 @@ void gc::Game::reset_players()
 void gc::Game::render()
 {
     if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU ||
-        state_ == GameState::GAME_WIN)
+        state_ == GameState::GAME_ENDS)
     {
         effects_->begin_render();
         // Draw background
@@ -533,7 +533,7 @@ void gc::Game::render()
                            0.75f);
     }
 
-    if (state_ == GameState::GAME_WIN)
+    if (state_ == GameState::GAME_ENDS)
     {
         std::string winner{};
         if (winner_ == Winner::Player1)

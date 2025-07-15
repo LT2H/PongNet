@@ -17,6 +17,7 @@ enum class GameMsgTypes : u32 {
     GameUpdatePlayer,
     GamePlayerLaunchBall,
     GameReduceLives,
+    GameEnds,
 
     // Audio
     GamePlayPadSound,

@@ -322,7 +322,7 @@ class OnlineGame : public gc::Game
         }
 
         if (state_ == gc::GameState::GAME_ACTIVE ||
-            state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_WIN)
+            state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_ENDS)
         {
             // effects_->begin_render();
             // Draw background
@@ -405,29 +405,29 @@ class OnlineGame : public gc::Game
                                0.75f);
         }
 
-        // if (state_ == gc::GameState::GAME_WIN)
-        // {
-        //     std::string winner{};
-        //     if (winner_ == gc::Winner::Player1)
-        //     {
-        //         winner = "PLAYER 1";
-        //     }
-        //     else if (winner_ == gc::Winner::Player2)
-        //     {
-        //         winner = "PLAYER 2";
-        //     }
+        if (state_ == gc::GameState::GAME_ENDS)
+        {
+            std::string endgame_msg{};
+            if (won_)
+            {
+                endgame_msg = "YOU WON";
+            }
+            else
+            {
+                endgame_msg = "YOU LOST";
+            }
 
-        //     text_->render_text(winner + " WON!",
-        //                        320.0,
-        //                        screen_info_.height / 2 - 20.0,
-        //                        1.0,
-        //                        glm::vec3(0.0, 1.0, 0.0));
-        //     text_->render_text("Press ENTER to retry or ESC to quit",
-        //                        130.0,
-        //                        screen_info_.height / 2,
-        //                        1.0,
-        //                        glm::vec3(1.0, 1.0, 0.0));
-        // }
+            text_->render_text(endgame_msg,
+                               320.0,
+                               screen_info_.height / 2 - 20.0,
+                               1.0,
+                               glm::vec3(0.0, 1.0, 0.0));
+            text_->render_text("Press ENTER to retry or ESC to quit",
+                               130.0,
+                               screen_info_.height / 2,
+                               1.0,
+                               glm::vec3(1.0, 1.0, 0.0));
+        }
     }
 
     void process_input(float dt)
@@ -459,7 +459,7 @@ class OnlineGame : public gc::Game
             }
         }
 
-        if (state_ == gc::GameState::GAME_WIN)
+        if (state_ == gc::GameState::GAME_ENDS)
         {
             if (keys_[GLFW_KEY_ENTER])
             {
@@ -752,6 +752,17 @@ class OnlineGame : public gc::Game
                     ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
                     break;
                 }
+                case GameMsgTypes::GameEnds:
+                {
+                    PlayerNumber winner{};
+                    msg >> winner;
+                    if (winner == map_players_[local_player_id_]->player_number_)
+                    {
+                        won_ = true;
+                    }
+                    state_ = gc::GameState::GAME_ENDS;
+                    break;
+                }
                 }
             }
         }
@@ -792,7 +803,7 @@ class OnlineGame : public gc::Game
         //     reset_players();
         //     reset_level();
         //     effects_->chaos_ = true;
-        //     state_           = gc::GameState::GAME_WIN;
+        //     state_           = gc::GameState::GAME_ENDS;
         //     winner_          = gc::Winner::Player1;
         // }
 
@@ -818,4 +829,5 @@ class OnlineGame : public gc::Game
     bool waiting_for_connection{ true };
     bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
+    bool won_{ false };
 };
