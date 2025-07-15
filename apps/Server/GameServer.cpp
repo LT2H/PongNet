@@ -113,25 +113,19 @@ class Server : public net::ServerInterface<GameMsgTypes>
                         player_desc.screen_info.height - player_desc.size.y
                     }; // Set the position for player 1
 
-                    has_player_one_ = true;
-                    player_desc.player_number =
-                        PlayerNumber::One;
+                    has_player_one_           = true;
+                    player_desc.player_number = PlayerNumber::One;
                 }
                 else
                 {
-                    player_desc.player_number =
-                        PlayerNumber::Two;
+                    player_desc.player_number = PlayerNumber::Two;
                     // Also add the ball now that we have 2 players
                     const glm::vec2 player_size{ 100.0f, 20.0f };
                     const float player_velocity{ 500.0f };
 
                     glm::vec2 player1_pos{ glm::vec2{
-                        player_desc.screen_info.width /
-                                2.0f -
-                            player_size.x / 2.0f,
-                            player_desc
-                                .screen_info.height -
-                            player_size.y } };
+                        player_desc.screen_info.width / 2.0f - player_size.x / 2.0f,
+                        player_desc.screen_info.height - player_size.y } };
 
                     glm::vec2 ball_pos{
                         player1_pos + glm::vec2{ player_size.x / 2.0f - ball_radius_,
@@ -150,13 +144,14 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     message_all_clients(msg_add_ball);
                 }
                 player_desc.pos = player_pos;
-                
+
                 msg_add_player << player_desc;
                 message_all_clients(msg_add_player);
-                
+
                 // Also update player's desc on the server
-                map_player_roster_.insert_or_assign(player_desc.unique_id, player_desc);
-                
+                map_player_roster_.insert_or_assign(player_desc.unique_id,
+                                                    player_desc);
+
                 for (const auto& player : map_player_roster_)
                 {
                     net::Message<GameMsgTypes> msg_add_other_players{};
@@ -218,7 +213,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     {
         if (map_player_roster_.contains(temp_player_id_))
         {
-            // // and finally check collisions for player 1 pad (unless stuck)
+            // check collisions for player 1 pad (unless stuck)
             gc::Collision result{ check_collision(
                 ball_, map_player_roster_[temp_player_id_]) };
             if (map_player_roster_[temp_player_id_].player_number ==
@@ -419,6 +414,31 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
     void broadcast_game_state()
     {
+        // reduce player 1 and 2 lives
+        net::Message<GameMsgTypes> msg_reduce_lives{};
+        PlayerDesc sending_player_desc{};
+        msg_reduce_lives.header.id = GameMsgTypes::GameReduceLives;
+        for (auto& player_desc : map_player_roster_)
+        {
+            if (player_desc.second.player_number == PlayerNumber::One &&
+                ball_.pos.y >= player_desc.second.screen_info.height - ball_.size.y) 
+            {
+                --player_desc.second.lives;
+                sending_player_desc = player_desc.second;
+                break;
+            }
+
+            if (player_desc.second.player_number == PlayerNumber::Two &&
+                ball_.pos.y <= 0)
+            {
+                --player_desc.second.lives;
+                sending_player_desc = player_desc.second;
+                break;
+            }
+        }
+        msg_reduce_lives << sending_player_desc;
+        message_all_clients(msg_reduce_lives);
+
         net::Message<GameMsgTypes> msg_update_ball{};
         msg_update_ball.header.id = GameMsgTypes::GameUpdateBall;
         msg_update_ball << ball_;
@@ -449,17 +469,3 @@ int main()
     }
     return 0;
 }
-// reduce player 1 lives
-// if (player_desc.player_number == PlayerNumber::One &&
-//     ball_.pos.y >= player_desc.screen_info.height - ball_.size.y)
-// {
-//     // std::cout << "Hit\n";
-//     --player_desc.lives;
-// }
-
-// // reduce player 2 lives
-// if (player_desc.player_number == PlayerNumber::Two &&
-//     ball_.pos.y <= 0 - ball_.size.y)
-// {
-//     --player_desc.lives;
-// }

@@ -379,14 +379,14 @@ class OnlineGame : public gc::Game
             for (const auto& player_desc : map_players_)
             {
                 ss << player_desc.second->get_desc().lives;
-                if (player_desc.first == local_player_id_)
+                if (player_desc.second->player_number_ == PlayerNumber::One)
                 {
                     text_->render_text("Lives " + ss.str(),
                                        5.0f,
                                        screen_info_.height - font_size_,
                                        1.0f);
                 }
-                else
+                if (player_desc.second->player_number_ == PlayerNumber::Two)
                 {
                     text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
                 }
@@ -487,8 +487,7 @@ class OnlineGame : public gc::Game
             if (keys_[GLFW_KEY_D])
             {
                 if (map_players_[local_player_id_]->pos_.x <=
-                    screen_info_.width -
-                        map_players_[local_player_id_]->size_.x)
+                    screen_info_.width - map_players_[local_player_id_]->size_.x)
                 {
                     map_players_[local_player_id_]->pos_.x += velocity;
                     // if (ball_->stuck_)
@@ -497,7 +496,8 @@ class OnlineGame : public gc::Game
                     // }
                 }
             }
-            if (keys_[GLFW_KEY_SPACE] && map_players_[local_player_id_]->player_number_ == PlayerNumber::One)
+            if (keys_[GLFW_KEY_SPACE] &&
+                map_players_[local_player_id_]->player_number_ == PlayerNumber::One)
             {
                 net::Message<GameMsgTypes> msg_launch_ball{};
                 msg_launch_ball.header.id = GameMsgTypes::GamePlayerLaunchBall;
@@ -652,7 +652,8 @@ class OnlineGame : public gc::Game
                     //     gc::ResourceManager::get_texture("paddle"));
                     // sending_msg << local_player_->get_desc();
 
-                    PlayerDesc local_player_desc{ .pos{ 100.0f, 100.0f }, .screen_info{800, 600} };
+                    PlayerDesc local_player_desc{ .pos{ 100.0f, 100.0f },
+                                                  .screen_info{ 800, 600 } };
                     sending_msg << local_player_desc;
                     client_.send(sending_msg);
 
@@ -662,9 +663,7 @@ class OnlineGame : public gc::Game
                 {
                     // Server is assigning us out Id
                     msg >> local_player_id_;
-                    std::cout
-                        << "Assigned client Id = " << local_player_id_
-                        << "\n";
+                    std::cout << "Assigned client Id = " << local_player_id_ << "\n";
                     break;
                 }
                 case GameMsgTypes::ServerIsFull:
@@ -722,6 +721,17 @@ class OnlineGame : public gc::Game
                     player->set_props(player_desc);
 
                     map_players_.insert_or_assign(player->unique_id_, player);
+                    break;
+                }
+                case GameMsgTypes::GameReduceLives:
+                {
+                    PlayerDesc player_desc{};
+                    msg >> player_desc;
+                    auto it = map_players_.find(player_desc.unique_id);
+                    if (it != map_players_.end())
+                    {
+                        it->second->lives_ = player_desc.lives;
+                    }
                     break;
                 }
                 case GameMsgTypes::GameAddBall:
