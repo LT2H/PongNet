@@ -379,7 +379,7 @@ class OnlineGame : public gc::Game
             for (const auto& player_desc : map_players_)
             {
                 ss << player_desc.second->get_desc().lives;
-                if (player_desc.first == local_player_desc_.unique_id)
+                if (player_desc.first == local_player_id_)
                 {
                     text_->render_text("Lives " + ss.str(),
                                        5.0f,
@@ -475,9 +475,9 @@ class OnlineGame : public gc::Game
             // move player1_'s paddle
             if (keys_[GLFW_KEY_A])
             {
-                if (map_players_[local_player_desc_.unique_id]->pos_.x >= 0.0f)
+                if (map_players_[local_player_id_]->pos_.x >= 0.0f)
                 {
-                    map_players_[local_player_desc_.unique_id]->pos_.x -= velocity;
+                    map_players_[local_player_id_]->pos_.x -= velocity;
                     // if (ball_->stuck_)
                     // {
                     //     ball_->pos_.x -= velocity;
@@ -486,18 +486,18 @@ class OnlineGame : public gc::Game
             }
             if (keys_[GLFW_KEY_D])
             {
-                if (map_players_[local_player_desc_.unique_id]->pos_.x <=
+                if (map_players_[local_player_id_]->pos_.x <=
                     screen_info_.width -
-                        map_players_[local_player_desc_.unique_id]->size_.x)
+                        map_players_[local_player_id_]->size_.x)
                 {
-                    map_players_[local_player_desc_.unique_id]->pos_.x += velocity;
+                    map_players_[local_player_id_]->pos_.x += velocity;
                     // if (ball_->stuck_)
                     // {
                     //     ball_->pos_.x += velocity;
                     // }
                 }
             }
-            if (keys_[GLFW_KEY_SPACE])
+            if (keys_[GLFW_KEY_SPACE] && map_players_[local_player_id_]->player_number_ == PlayerNumber::One)
             {
                 net::Message<GameMsgTypes> msg_launch_ball{};
                 msg_launch_ball.header.id = GameMsgTypes::GamePlayerLaunchBall;
@@ -652,8 +652,8 @@ class OnlineGame : public gc::Game
                     //     gc::ResourceManager::get_texture("paddle"));
                     // sending_msg << local_player_->get_desc();
 
-                    local_player_desc_ = PlayerDesc{ .pos{ 100.0f, 100.0f } };
-                    sending_msg << local_player_desc_;
+                    PlayerDesc local_player_desc{ .pos{ 100.0f, 100.0f }, .screen_info{800, 600} };
+                    sending_msg << local_player_desc;
                     client_.send(sending_msg);
 
                     break;
@@ -661,9 +661,9 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::ClientAssignId:
                 {
                     // Server is assigning us out Id
-                    msg >> local_player_desc_.unique_id;
+                    msg >> local_player_id_;
                     std::cout
-                        << "Assigned client Id = " << local_player_desc_.unique_id
+                        << "Assigned client Id = " << local_player_id_
                         << "\n";
                     break;
                 }
@@ -693,7 +693,7 @@ class OnlineGame : public gc::Game
                         map_players_.insert_or_assign(player->unique_id_, player);
                     }
 
-                    if (player_desc.unique_id == local_player_desc_.unique_id &&
+                    if (player_desc.unique_id == local_player_id_ &&
                         waiting_for_connection)
                     {
                         // Now we exist in game world
@@ -787,11 +787,11 @@ class OnlineGame : public gc::Game
         // }
 
         // Send our player desc
-        if (map_players_.contains(local_player_desc_.unique_id))
+        if (map_players_.contains(local_player_id_))
         {
             net::Message<GameMsgTypes> msg{};
             msg.header.id = GameMsgTypes::GameUpdatePlayer;
-            msg << map_players_[local_player_desc_.unique_id]->get_desc();
+            msg << map_players_[local_player_id_]->get_desc();
             client_.send(msg);
         }
 
@@ -802,7 +802,7 @@ class OnlineGame : public gc::Game
     std::unordered_map<u32, std::shared_ptr<gc::Player>> map_players_{};
     std::shared_ptr<gc::BallObject> ball_;
     Client client_{};
-    PlayerDesc local_player_desc_;
+    u32 local_player_id_;
     gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };
 
     bool waiting_for_connection{ true };
