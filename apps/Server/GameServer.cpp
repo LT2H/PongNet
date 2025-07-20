@@ -44,6 +44,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     void on_client_disconnect(
         std::shared_ptr<net::Connection<GameMsgTypes>> client) override
     {
+        std::cout << "A player disconnected\n";
         if (client)
         {
             if (!map_player_roster_.contains(client->id()))
@@ -171,6 +172,12 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
         case GameMsgTypes::ClientUnregisterWithServer:
         {
+            // net::Message<GameMsgTypes> msg_check_client_disconnected{};
+            // msg_check_client_disconnected.header.id =
+            // GameMsgTypes::ServerGetStatus; message_client(client,
+            // msg_check_client_disconnected);
+            std::cout << "Client unregistered with server\n";
+            map_player_roster_.erase(client->id());
             break;
         }
         case GameMsgTypes::GameUpdatePlayer:

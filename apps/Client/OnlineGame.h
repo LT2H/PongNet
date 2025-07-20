@@ -287,10 +287,10 @@ class OnlineGame : public gc::Game
             // Alert Server is full
             if (show_server_full_popup_)
             {
-                ImGui::OpenPopup("Alert");
+                ImGui::OpenPopup("ServerIsFullPopup");
             }
             if (ImGui::BeginPopupModal(
-                    "Alert", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+                    "ServerIsFullPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 ImGui::Text("Server is full");
                 if (ImGui::Button("OK"))
@@ -393,6 +393,44 @@ class OnlineGame : public gc::Game
                 ss.str("");
                 ss.clear();
             }
+
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            // In-game menu
+            if (show_game_active_menu_popup)
+            {
+                ImGui::OpenPopup("GameActivePopup");
+            }
+            if (ImGui::BeginPopupModal(
+                    "GameActivePopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                if (ImGui::Button("Close"))
+                {
+                    ImGui::CloseCurrentPopup();
+                    show_game_active_menu_popup = false;
+                }
+
+                if (ImGui::Button("Quit Game"))
+                {
+                    net::Message<GameMsgTypes> msg_unregister_with_server{};
+                    msg_unregister_with_server.header.id = GameMsgTypes::ClientUnregisterWithServer;
+                    client_.send(msg_unregister_with_server);
+
+                    client_.disconnect();
+                    map_players_.clear();
+                    show_game_active_menu_popup = false;
+                    state_                      = gc::GameState::GAME_CONNECT_TO_SERVER;
+
+                    std::cout << "QUIT\n";
+
+                }
+                ImGui::EndPopup();
+            }
+
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
 
         if (state_ == gc::GameState::GAME_MENU)
@@ -503,6 +541,11 @@ class OnlineGame : public gc::Game
                 msg_launch_ball.header.id = GameMsgTypes::GamePlayerLaunchBall;
                 client_.send(msg_launch_ball);
                 // ball_->stuck_ = false;
+            }
+
+            if (keys_[GLFW_KEY_DELETE])
+            {
+                show_game_active_menu_popup = true;
             }
         }
     }
@@ -668,6 +711,10 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::ServerIsFull:
                 {
+                    // net::Message<GameMsgTypes> msg_unregister_with_server{};
+                    // msg_unregister_with_server.header.id = GameMsgTypes::ClientUnregisterWithServer;
+                    // client_.send(msg_unregister_with_server);
+
                     client_.disconnect();
                     map_players_.clear();
                     show_server_full_popup_ = true;
@@ -829,5 +876,6 @@ class OnlineGame : public gc::Game
     bool waiting_for_connection{ true };
     bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
+    bool show_game_active_menu_popup{ false };
     bool won_{ false };
 };
