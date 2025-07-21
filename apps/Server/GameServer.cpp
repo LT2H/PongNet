@@ -143,6 +143,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     msg_add_ball.header.id = GameMsgTypes::GameAddBall;
                     msg_add_ball << ball_;
                     message_all_clients(msg_add_ball);
+
+                    game_playing_ = true; // Start the game
                 }
                 player_desc.pos = player_pos;
 
@@ -371,12 +373,12 @@ class Server : public net::ServerInterface<GameMsgTypes>
   private:
     void tick(float dt)
     {
-        if (!game_ended_)
+        if (game_playing_)
         {
             update_ball(dt);
+            do_collisions();
+            broadcast_game_state();
         }
-        do_collisions();
-        broadcast_game_state();
     }
 
     void update_ball(float dt)
@@ -423,15 +425,21 @@ class Server : public net::ServerInterface<GameMsgTypes>
         winner_                 = winner;
         msg_game_ends << winner_;
         message_all_clients(msg_game_ends);
-        game_ended_ = true;
+        game_playing_ = false;
     }
 
     void broadcast_game_state()
     {
         // reduce player 1 and 2 lives
         PlayerDesc sending_player_desc{};
+
         for (auto& player_desc : map_player_roster_)
         {
+            if (map_player_roster_.size() < 2)
+            {
+                broadcast_game_ends(player_desc.second.player_number);
+            }
+
             if (player_desc.second.player_number == PlayerNumber::One &&
                 player_desc.second.lives <= 0)
             {
@@ -488,7 +496,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     double delta_time_{ 0.0 };
     double last_frame_{ 0.0 };
 
-    bool game_ended_{ false };
+    bool game_playing_{ false };
 };
 
 int main()
