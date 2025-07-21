@@ -22,10 +22,12 @@ class Player : public GameObject
     u32 lives_;
     ScreenInfo screen_info_;
     PlayerNumber player_number_{ PlayerNumber::One };
+    bool is_ready{ false };
 
     PlayerDesc get_desc()
     {
-        return { unique_id_, lives_, pos_, size_, screen_info_, player_number_ };
+        return { unique_id_,   lives_,         pos_,    size_,
+                 screen_info_, player_number_, is_ready };
     }
 
     void set_props(const PlayerDesc& player_desc)
@@ -36,6 +38,7 @@ class Player : public GameObject
         size_          = player_desc.size;
         screen_info_   = player_desc.screen_info;
         player_number_ = player_desc.player_number;
+        is_ready       = player_desc.is_ready;
     }
 };
 } // namespace gc

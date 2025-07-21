@@ -9,6 +9,7 @@
 #include "NetCommon/NetMessage.h"
 #include "NetCommon/NetServer.h"
 #include <GameCommon/BallDesc.h>
+#include <winsock2.h>
 
 class Server : public net::ServerInterface<GameMsgTypes>
 {
@@ -143,8 +144,6 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     msg_add_ball.header.id = GameMsgTypes::GameAddBall;
                     msg_add_ball << ball_;
                     message_all_clients(msg_add_ball);
-
-                    game_playing_ = true; // Start the game
                 }
                 player_desc.pos = player_pos;
 
@@ -207,6 +206,44 @@ class Server : public net::ServerInterface<GameMsgTypes>
         case GameMsgTypes::GamePlayerLaunchBall:
         {
             ball_.stuck = false;
+            break;
+        }
+        case GameMsgTypes::GamePlayerReady:
+        {
+            bool is_ready{ false };
+            msg >> is_ready;
+
+            // Also update player's is_ready on the server
+            auto it{ map_player_roster_.find(client->id()) };
+            if (it != map_player_roster_.end())
+            {
+                it->second.is_ready = is_ready;
+            }
+
+            bool player_one_ready{ false };
+            bool player_two_ready{ false };
+            for (const auto& [id, player] : map_player_roster_)
+            {
+                if (player.player_number == PlayerNumber::One && player.is_ready)
+                {
+                    player_one_ready = true;
+                }
+
+                if (player.player_number == PlayerNumber::Two && player.is_ready)
+                {
+                    player_two_ready = true;
+                }
+            }
+
+            if (player_one_ready && player_two_ready)
+            {
+                std::cout << "Both players are ready\n";
+                game_active_ = true;
+                net::Message<GameMsgTypes> msg_game_playing{};
+                msg_game_playing.header.id = GameMsgTypes::GameActive;
+                message_all_clients(msg_game_playing);
+            }
+
             break;
         }
         }
@@ -373,7 +410,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
   private:
     void tick(float dt)
     {
-        if (game_playing_)
+        if (game_active_)
         {
             update_ball(dt);
             do_collisions();
@@ -425,7 +462,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
         winner_                 = winner;
         msg_game_ends << winner_;
         message_all_clients(msg_game_ends);
-        game_playing_ = false;
+        game_active_ = false;
     }
 
     void broadcast_game_state()
@@ -496,7 +533,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     double delta_time_{ 0.0 };
     double last_frame_{ 0.0 };
 
-    bool game_playing_{ false };
+    bool game_active_{ false };
 };
 
 int main()

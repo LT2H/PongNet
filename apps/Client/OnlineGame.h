@@ -250,7 +250,7 @@ class OnlineGame : public gc::Game
 
     void render() override
     {
-        if (state_ == gc::GameState::GAME_CONNECT_TO_SERVER)
+        if (state_ == gc::GameState::GAME_MAIN_MENU)
         {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -274,7 +274,7 @@ class OnlineGame : public gc::Game
                 // Connect to server
                 if (client_.connect(client_.ip_to_connect().data(), 60000))
                 {
-                    state_ = gc::GameState::GAME_MENU;
+                    state_ = gc::GameState::GAME_READY;
                 }
                 else
                 {
@@ -307,7 +307,7 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        if (waiting_for_connection && state_ == gc::GameState::GAME_MENU)
+        if (waiting_for_connection && state_ == gc::GameState::GAME_READY)
         {
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
@@ -322,7 +322,8 @@ class OnlineGame : public gc::Game
         }
 
         if (state_ == gc::GameState::GAME_ACTIVE ||
-            state_ == gc::GameState::GAME_MENU || state_ == gc::GameState::GAME_ENDS)
+            state_ == gc::GameState::GAME_READY ||
+            state_ == gc::GameState::GAME_ENDS)
         {
             // effects_->begin_render();
             // Draw background
@@ -417,7 +418,7 @@ class OnlineGame : public gc::Game
                     client_.disconnect();
                     map_players_.clear();
                     show_game_active_menu_popup = false;
-                    state_                      = gc::GameState::GAME_CONNECT_TO_SERVER;
+                    state_                      = gc::GameState::GAME_MAIN_MENU;
                 }
                 ImGui::EndPopup();
             }
@@ -426,7 +427,7 @@ class OnlineGame : public gc::Game
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
 
-        if (state_ == gc::GameState::GAME_MENU)
+        if (state_ == gc::GameState::GAME_READY)
         {
             text_->render_text(
                 "Press ENTER to start", 250.0f, screen_info_.height / 2, 1.0f);
@@ -464,11 +465,17 @@ class OnlineGame : public gc::Game
     void process_input(float dt)
     {
         // Control of Player object
-        if (state_ == gc::GameState::GAME_MENU)
+        if (state_ == gc::GameState::GAME_READY)
         {
             if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
             {
-                state_                          = gc::GameState::GAME_ACTIVE;
+                map_players_[local_player_id_]->is_ready = true;
+                net::Message<GameMsgTypes> msg_is_ready{};
+                msg_is_ready.header.id = GameMsgTypes::GamePlayerReady;
+                client_.send(msg_is_ready);
+
+                state_ = gc::GameState::GAME_ACTIVE;
+                
                 keys_processed_[GLFW_KEY_ENTER] = true;
             }
             if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
@@ -496,11 +503,11 @@ class OnlineGame : public gc::Game
             {
                 keys_processed_[GLFW_KEY_ENTER] = true;
                 effects_->chaos_                = false;
-                state_                          = gc::GameState::GAME_MENU;
+                state_                          = gc::GameState::GAME_READY;
             }
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE)
+        if (state_ == gc::GameState::GAME_ACTIVE && game_active_)
         {
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
@@ -707,7 +714,7 @@ class OnlineGame : public gc::Game
                     client_.disconnect();
                     map_players_.clear();
                     show_server_full_popup_ = true;
-                    state_                  = gc::GameState::GAME_CONNECT_TO_SERVER;
+                    state_                  = gc::GameState::GAME_MAIN_MENU;
                     break;
                 }
                 case GameMsgTypes::GameAddPlayer:
@@ -741,6 +748,11 @@ class OnlineGame : public gc::Game
                     u32 removal_id{ 0 };
                     msg >> removal_id;
                     map_players_.erase(removal_id);
+                    break;
+                }
+                case GameMsgTypes::GameActive:
+                {
+                    game_active_ = true;
                     break;
                 }
                 case GameMsgTypes::GameUpdatePlayer:
@@ -860,11 +872,12 @@ class OnlineGame : public gc::Game
     std::shared_ptr<gc::BallObject> ball_;
     Client client_{};
     u32 local_player_id_;
-    gc::GameState state_{ gc::GameState::GAME_CONNECT_TO_SERVER };
+    gc::GameState state_{ gc::GameState::GAME_MAIN_MENU };
 
     bool waiting_for_connection{ true };
     bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
     bool show_game_active_menu_popup{ false };
     bool won_{ false };
+    bool game_active_{ false };
 };

@@ -14,7 +14,7 @@ std::array<bool, 1024> gc::Game::keys_{};
 std::array<bool, 1024> gc::Game::keys_processed_{};
 
 gc::Game::Game(u32 width, u32 height)
-    : state_{ GameState::GAME_MENU }, screen_info_{ width, height }
+    : state_{ GameState::GAME_READY }, screen_info_{ width, height }
 {
     window_ = nullptr;
 }
@@ -237,7 +237,7 @@ void gc::Game::run()
 
 void gc::Game::process_player1_input(float dt)
 {
-    if (state_ == GameState::GAME_MENU)
+    if (state_ == GameState::GAME_READY)
     {
         if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
         {
@@ -269,7 +269,7 @@ void gc::Game::process_player1_input(float dt)
         {
             keys_processed_[GLFW_KEY_ENTER] = true;
             effects_->chaos_                = false;
-            state_                          = GameState::GAME_MENU;
+            state_                          = GameState::GAME_READY;
         }
     }
 
@@ -308,7 +308,7 @@ void gc::Game::process_player1_input(float dt)
 
 void gc::Game::process_player2_input(float dt)
 {
-    if (state_ == GameState::GAME_MENU)
+    if (state_ == GameState::GAME_READY)
     {
         if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
         {
@@ -340,7 +340,7 @@ void gc::Game::process_player2_input(float dt)
         {
             keys_processed_[GLFW_KEY_ENTER] = true;
             effects_->chaos_                = false;
-            state_                          = GameState::GAME_MENU;
+            state_                          = GameState::GAME_READY;
         }
     }
 
@@ -480,7 +480,7 @@ void gc::Game::reset_players()
 
 void gc::Game::render()
 {
-    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_MENU ||
+    if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_READY ||
         state_ == GameState::GAME_ENDS)
     {
         effects_->begin_render();
@@ -523,7 +523,7 @@ void gc::Game::render()
             "Lives " + ss.str(), 5.0f, screen_info_.height - font_size_, 1.0f);
     }
 
-    if (state_ == GameState::GAME_MENU)
+    if (state_ == GameState::GAME_READY)
     {
         text_->render_text(
             "Press ENTER to start", 250.0f, screen_info_.height / 2, 1.0f);

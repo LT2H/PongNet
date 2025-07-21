@@ -18,8 +18,8 @@ class Player;
 enum class GameState
 {
     GAME_ACTIVE,
-    GAME_MENU,
-    GAME_CONNECT_TO_SERVER,
+    GAME_READY,
+    GAME_MAIN_MENU,
     GAME_ENDS,
 };
 

@@ -17,4 +17,5 @@ struct PlayerDesc
     glm::vec2 size{ 100.0f, 20.0f };
     ScreenInfo screen_info{};
     PlayerNumber player_number{ PlayerNumber::One };
+    bool is_ready{false};
 };

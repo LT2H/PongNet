@@ -16,7 +16,9 @@ enum class GameMsgTypes : u32 {
     GameRemovePlayer,
     GameUpdatePlayer,
     GamePlayerLaunchBall,
+    GamePlayerReady,
     GameReduceLives,
+    GameActive,
     GameEnds,
 
     // Audio
