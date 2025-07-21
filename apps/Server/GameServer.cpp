@@ -172,12 +172,6 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
         case GameMsgTypes::ClientUnregisterWithServer:
         {
-            // net::Message<GameMsgTypes> msg_check_client_disconnected{};
-            // msg_check_client_disconnected.header.id =
-            // GameMsgTypes::ServerGetStatus; message_client(client,
-            // msg_check_client_disconnected);
-            std::cout << "Client unregistered with server\n";
-            map_player_roster_.erase(client->id());
             break;
         }
         case GameMsgTypes::GameUpdatePlayer:

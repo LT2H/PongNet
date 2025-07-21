@@ -414,17 +414,10 @@ class OnlineGame : public gc::Game
 
                 if (ImGui::Button("Quit Game"))
                 {
-                    net::Message<GameMsgTypes> msg_unregister_with_server{};
-                    msg_unregister_with_server.header.id = GameMsgTypes::ClientUnregisterWithServer;
-                    client_.send(msg_unregister_with_server);
-
                     client_.disconnect();
                     map_players_.clear();
                     show_game_active_menu_popup = false;
                     state_                      = gc::GameState::GAME_CONNECT_TO_SERVER;
-
-                    std::cout << "QUIT\n";
-
                 }
                 ImGui::EndPopup();
             }
@@ -711,10 +704,6 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::ServerIsFull:
                 {
-                    // net::Message<GameMsgTypes> msg_unregister_with_server{};
-                    // msg_unregister_with_server.header.id = GameMsgTypes::ClientUnregisterWithServer;
-                    // client_.send(msg_unregister_with_server);
-
                     client_.disconnect();
                     map_players_.clear();
                     show_server_full_popup_ = true;
