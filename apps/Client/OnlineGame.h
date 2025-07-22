@@ -3,6 +3,7 @@
 #include <GameCommon/Game.h>
 #include <GameCommon/Player.h>
 #include "Client.h"
+#include "GLFW/glfw3.h"
 #include "GameCommon/BallDesc.h"
 #include "GameCommon/BallObject.h"
 #include "NetCommon/NetMessage.h"
@@ -543,7 +544,7 @@ class OnlineGame : public gc::Game
                 // ball_->stuck_ = false;
             }
 
-            if (keys_[GLFW_KEY_DELETE])
+            if (keys_[GLFW_KEY_ESCAPE])
             {
                 show_game_active_menu_popup = true;
             }
