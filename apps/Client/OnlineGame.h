@@ -323,6 +323,7 @@ class OnlineGame : public gc::Game
         }
 
         if (state_ == gc::GameState::GAME_ACTIVE ||
+            state_ == gc::GameState::WAITING_FOR_OTHER_PLAYER ||
             state_ == gc::GameState::GAME_READY ||
             state_ == gc::GameState::GAME_ENDS)
         {
@@ -431,11 +432,17 @@ class OnlineGame : public gc::Game
         if (state_ == gc::GameState::GAME_READY)
         {
             text_->render_text(
-                "Press ENTER to start", 250.0f, screen_info_.height / 2, 1.0f);
-            text_->render_text("Press W or S to select level",
-                               245.0f,
-                               screen_info_.height / 2 + 20.0f,
-                               0.75f);
+                "Press ENTER to get ready", 250.0f, screen_info_.height / 2, 1.0f);
+            // text_->render_text("Press W or S to select level",
+            //                    245.0f,
+            //                    screen_info_.height / 2 + 20.0f,
+            //                    0.75f);
+        }
+
+        if (state_ == gc::GameState::WAITING_FOR_OTHER_PLAYER)
+        {
+            text_->render_text(
+                "Waiting for other player", 250.0f, screen_info_.height / 2, 1.0f);
         }
 
         if (state_ == gc::GameState::GAME_ENDS)
@@ -475,8 +482,8 @@ class OnlineGame : public gc::Game
                 msg_is_ready.header.id = GameMsgTypes::GamePlayerReady;
                 client_.send(msg_is_ready);
 
-                state_ = gc::GameState::GAME_ACTIVE;
-                
+                state_ = gc::GameState::WAITING_FOR_OTHER_PLAYER;
+
                 keys_processed_[GLFW_KEY_ENTER] = true;
             }
             if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
@@ -508,7 +515,7 @@ class OnlineGame : public gc::Game
             }
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE && game_active_)
+        if (state_ == gc::GameState::GAME_ACTIVE)
         {
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
@@ -753,7 +760,7 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GameActive:
                 {
-                    game_active_ = true;
+                    state_ = gc::GameState::GAME_ACTIVE;
                     break;
                 }
                 case GameMsgTypes::GameUpdatePlayer:
@@ -880,5 +887,4 @@ class OnlineGame : public gc::Game
     bool show_server_full_popup_{ false };
     bool show_game_active_menu_popup{ false };
     bool won_{ false };
-    bool game_active_{ false };
 };
