@@ -275,7 +275,7 @@ class OnlineGame : public gc::Game
                 // Connect to server
                 if (client_.connect(client_.ip_to_connect().data(), 60000))
                 {
-                    state_ = gc::GameState::GAME_READY;
+                    state_ = gc::GameState::WAITING_TO_CONNECT;
                 }
                 else
                 {
@@ -308,7 +308,7 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        if (waiting_for_connection && state_ == gc::GameState::GAME_READY)
+        if (state_ == gc::GameState::WAITING_TO_CONNECT)
         {
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
@@ -475,7 +475,8 @@ class OnlineGame : public gc::Game
         // Control of Player object
         if (state_ == gc::GameState::GAME_READY)
         {
-            if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER])
+            if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER] &&
+                map_players_.contains(local_player_id_))
             {
                 map_players_[local_player_id_]->is_ready = true;
                 net::Message<GameMsgTypes> msg_is_ready{};
@@ -486,33 +487,33 @@ class OnlineGame : public gc::Game
 
                 keys_processed_[GLFW_KEY_ENTER] = true;
             }
-            if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
-            {
-                current_level_              = (current_level_ + 1) % 4;
-                keys_processed_[GLFW_KEY_W] = true;
-            }
-            if (keys_[GLFW_KEY_S] && !keys_processed_[GLFW_KEY_S])
-            {
-                if (current_level_ > 0)
-                {
-                    --current_level_;
-                }
-                else
-                {
-                    current_level_ = 3;
-                }
-                keys_processed_[GLFW_KEY_S] = true;
-            }
+            // if (keys_[GLFW_KEY_W] && !keys_processed_[GLFW_KEY_W])
+            // {
+            //     current_level_              = (current_level_ + 1) % 4;
+            //     keys_processed_[GLFW_KEY_W] = true;
+            // }
+            // if (keys_[GLFW_KEY_S] && !keys_processed_[GLFW_KEY_S])
+            // {
+            //     if (current_level_ > 0)
+            //     {
+            //         --current_level_;
+            //     }
+            //     else
+            //     {
+            //         current_level_ = 3;
+            //     }
+            //     keys_processed_[GLFW_KEY_S] = true;
+            // }
         }
 
         if (state_ == gc::GameState::GAME_ENDS)
         {
-            if (keys_[GLFW_KEY_ENTER])
-            {
-                keys_processed_[GLFW_KEY_ENTER] = true;
-                effects_->chaos_                = false;
-                state_                          = gc::GameState::GAME_READY;
-            }
+            // if (keys_[GLFW_KEY_ENTER])
+            // {
+            //     keys_processed_[GLFW_KEY_ENTER] = true;
+            //     effects_->chaos_                = false;
+            //     state_                          = gc::GameState::GAME_READY;
+            // }
         }
 
         if (state_ == gc::GameState::GAME_ACTIVE)
@@ -712,7 +713,7 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::ClientAssignId:
                 {
-                    // Server is assigning us out Id
+                    // Server is assigning us our Id
                     msg >> local_player_id_;
                     std::cout << "Assigned client Id = " << local_player_id_ << "\n";
                     break;
@@ -743,11 +744,10 @@ class OnlineGame : public gc::Game
                         map_players_.insert_or_assign(player->unique_id_, player);
                     }
 
-                    if (player_desc.unique_id == local_player_id_ &&
-                        waiting_for_connection)
+                    if (player_desc.unique_id == local_player_id_)
                     {
                         // Now we exist in game world
-                        waiting_for_connection = false;
+                        state_ = gc::GameState::GAME_READY;
                     }
                     break;
                 }
@@ -810,13 +810,20 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GameEnds:
                 {
-                    PlayerNumber winner{};
-                    msg >> winner;
-                    if (winner == map_players_[local_player_id_]->player_number_)
+                    // This hacky check prevents the client from rendering the game
+                    // over screen when reconnecting to a game that hasn't been reset
+                    // on the server.
+                    if (client_.is_connected())
                     {
-                        won_ = true;
+                        PlayerNumber winner{};
+                        msg >> winner;
+                        if (map_players_.contains(local_player_id_) &&
+                            winner == map_players_[local_player_id_]->player_number_)
+                        {
+                            won_ = true;
+                        }
+                        state_ = gc::GameState::GAME_ENDS;
                     }
-                    state_ = gc::GameState::GAME_ENDS;
                     break;
                 }
                 }
@@ -882,7 +889,6 @@ class OnlineGame : public gc::Game
     u32 local_player_id_;
     gc::GameState state_{ gc::GameState::GAME_MAIN_MENU };
 
-    bool waiting_for_connection{ true };
     bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
     bool show_game_active_menu_popup{ false };

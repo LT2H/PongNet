@@ -9,7 +9,6 @@
 #include "NetCommon/NetMessage.h"
 #include "NetCommon/NetServer.h"
 #include <GameCommon/BallDesc.h>
-#include <winsock2.h>
 
 class Server : public net::ServerInterface<GameMsgTypes>
 {
@@ -87,7 +86,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
             temp_player_id_ = player_desc.unique_id;
 
-            if (map_player_roster_.size() < 2)
+            if (map_player_roster_.size() < 2 && allow_connections_)
             {
                 player_desc.unique_id = client->id();
                 // map_player_roster_.insert_or_assign(player_desc.unique_id,
@@ -144,6 +143,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     msg_add_ball.header.id = GameMsgTypes::GameAddBall;
                     msg_add_ball << ball_;
                     message_all_clients(msg_add_ball);
+
+                    allow_connections_ = false; // The server now has 2 players, prevent all further connections
                 }
                 player_desc.pos = player_pos;
 
@@ -530,6 +531,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     double last_frame_{ 0.0 };
 
     bool game_active_{ false };
+    bool allow_connections_{ true };
 };
 
 int main()
