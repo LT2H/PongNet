@@ -21,6 +21,7 @@ enum class GameState
     GAME_READY,
     GAME_MAIN_MENU,
     GAME_ENDS,
+    WAITING_TO_CONNECT,
     WAITING_FOR_OTHER_PLAYER
 };
 
