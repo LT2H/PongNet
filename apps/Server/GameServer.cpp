@@ -86,7 +86,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
             temp_player_id_ = player_desc.unique_id;
 
-            if (map_player_roster_.size() < 2 && allow_connections_)
+            if (map_player_roster_.size() < MAX_PLAYERS && allow_connections_)
             {
                 player_desc.unique_id = client->id();
                 // map_player_roster_.insert_or_assign(player_desc.unique_id,
@@ -469,7 +469,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
         for (auto& player_desc : map_player_roster_)
         {
-            if (map_player_roster_.size() < 2)
+            if (map_player_roster_.size() < MAX_PLAYERS) // If a player quits the game, the remaining player wins
             {
                 broadcast_game_ends(player_desc.second.player_number);
             }
@@ -532,6 +532,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
     bool game_active_{ false };
     bool allow_connections_{ true };
+
+    const int MAX_PLAYERS{2};
 };
 
 int main()
