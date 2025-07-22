@@ -210,14 +210,11 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
         case GameMsgTypes::GamePlayerReady:
         {
-            bool is_ready{ false };
-            msg >> is_ready;
-
             // Also update player's is_ready on the server
             auto it{ map_player_roster_.find(client->id()) };
             if (it != map_player_roster_.end())
             {
-                it->second.is_ready = is_ready;
+                it->second.is_ready = true;
             }
 
             bool player_one_ready{ false };
@@ -237,7 +234,6 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
             if (player_one_ready && player_two_ready)
             {
-                std::cout << "Both players are ready\n";
                 game_active_ = true;
                 net::Message<GameMsgTypes> msg_game_playing{};
                 msg_game_playing.header.id = GameMsgTypes::GameActive;
