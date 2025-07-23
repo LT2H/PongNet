@@ -524,7 +524,7 @@ class OnlineGame : public gc::Game
             }
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE)
+        if (state_ == gc::GameState::GAME_ACTIVE && map_players_.contains(local_player_id_))
         {
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
