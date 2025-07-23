@@ -144,7 +144,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
                     msg_add_ball << ball_;
                     message_all_clients(msg_add_ball);
 
-                    allow_connections_ = false; // The server now has 2 players, prevent all further connections
+                    allow_connections_ = false; // The server now has 2 players,
+                                                // prevent all further connections
                 }
                 player_desc.pos = player_pos;
 
@@ -182,7 +183,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
             msg >> player_desc;
             temp_player_id_ = player_desc.unique_id;
 
-            if (ball_.stuck &&
+            if (ball_.stuck && map_player_roster_.contains(player_desc.unique_id) &&
                 map_player_roster_[player_desc.unique_id].player_number ==
                     PlayerNumber::One)
             {
@@ -418,7 +419,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     void update_ball(float dt)
     {
         // if not stuck to player board
-        if (!ball_.stuck)
+        if (!ball_.stuck && map_player_roster_.contains(temp_player_id_))
         {
             // move the ball
             ball_.pos += ball_.velocity * dt;
@@ -469,7 +470,8 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
         for (auto& player_desc : map_player_roster_)
         {
-            if (map_player_roster_.size() < MAX_PLAYERS) // If a player quits the game, the remaining player wins
+            if (map_player_roster_.size() <
+                MAX_PLAYERS) // If a player quits the game, the remaining player wins
             {
                 broadcast_game_ends(player_desc.second.player_number);
             }
@@ -515,6 +517,17 @@ class Server : public net::ServerInterface<GameMsgTypes>
         message_all_clients(msg_update_ball);
     }
 
+    void reset_game()
+    {
+        has_player_one_ = false;
+        temp_player_id_ = 0;
+        winner_         = PlayerNumber::Zero;
+
+        game_active_       = false;
+        allow_connections_ = true;
+        std::cout << "RESETING THE GAME\n" << std::endl;
+    }
+
   private:
     std::unordered_map<u32, PlayerDesc> map_player_roster_{};
     BallDesc ball_;
@@ -533,7 +546,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     bool game_active_{ false };
     bool allow_connections_{ true };
 
-    const int MAX_PLAYERS{2};
+    const int MAX_PLAYERS{ 2 };
 };
 
 int main()
