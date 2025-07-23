@@ -462,7 +462,7 @@ class OnlineGame : public gc::Game
                                screen_info_.height / 2 - 20.0,
                                1.0,
                                glm::vec3(0.0, 1.0, 0.0));
-            text_->render_text("Press ENTER to retry or ESC to quit",
+            text_->render_text("Press ENTER to return to main menu",
                                130.0,
                                screen_info_.height / 2,
                                1.0,
@@ -514,6 +514,14 @@ class OnlineGame : public gc::Game
             //     effects_->chaos_                = false;
             //     state_                          = gc::GameState::GAME_READY;
             // }
+
+            if (keys_[GLFW_KEY_ENTER])
+            {
+                keys_processed_[GLFW_KEY_ENTER] = true;
+                state_                          = gc::GameState::GAME_MAIN_MENU;
+                client_.disconnect();
+                map_players_.clear();
+            }
         }
 
         if (state_ == gc::GameState::GAME_ACTIVE)
