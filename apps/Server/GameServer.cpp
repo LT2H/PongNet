@@ -175,6 +175,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
         }
         case GameMsgTypes::ClientUnregisterWithServer:
         {
+            on_client_disconnect(client);
             break;
         }
         case GameMsgTypes::GameUpdatePlayer:
@@ -525,7 +526,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
         game_active_       = false;
         allow_connections_ = true;
-        std::cout << "RESETING THE GAME\n" << std::endl;
+        std::cout << "RESETING THE GAME" << std::endl;
     }
 
   private:
@@ -551,7 +552,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
 int main()
 {
-    Server server{ 60000 };
+    Server server{ 50000 };
     server.start();
     while (true)
     {

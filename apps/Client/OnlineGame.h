@@ -273,7 +273,7 @@ class OnlineGame : public gc::Game
             if (ImGui::Button("Connect"))
             {
                 // Connect to server
-                if (client_.connect(client_.ip_to_connect().data(), 60000))
+                if (client_.connect(client_.ip_to_connect().data(), 50000))
                 {
                     state_ = gc::GameState::WAITING_TO_CONNECT;
                 }
@@ -519,6 +519,9 @@ class OnlineGame : public gc::Game
             {
                 keys_processed_[GLFW_KEY_ENTER] = true;
                 state_                          = gc::GameState::GAME_MAIN_MENU;
+                net::Message<GameMsgTypes> msg_disconnect{};
+                msg_disconnect.header.id = GameMsgTypes::ClientUnregisterWithServer;
+                client_.send(msg_disconnect);
                 client_.disconnect();
                 map_players_.clear();
             }
