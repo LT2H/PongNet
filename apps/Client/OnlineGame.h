@@ -327,7 +327,7 @@ class OnlineGame : public gc::Game
             state_ == gc::GameState::GAME_READY ||
             state_ == gc::GameState::GAME_ENDS)
         {
-            // effects_->begin_render();
+            effects_->begin_render();
             // Draw background
             sprite_renderer_->draw_sprite(
                 gc::ResourceManager::get_texture("background"),
@@ -365,17 +365,8 @@ class OnlineGame : public gc::Game
                 ball_->draw(*sprite_renderer_);
             }
 
-            // effects_->end_render();
-            // effects_->render(glfwGetTime());
-
-            // ss << player1_->lives_;
-            // text_->render_text("Lives " + ss.str(), 5.0f, 5.0f, 1.0f);
-            // ss.str("");
-            // ss.clear();
-            // ss << player1_->lives_;
-            // text_->render_text(
-            //     "Lives " + ss.str(), 5.0f, screen_info_.height -
-            //     font_size_, 1.0f);
+            effects_->end_render();
+            effects_->render(glfwGetTime());
 
             // Show lives
             std::stringstream ss{};
@@ -527,7 +518,8 @@ class OnlineGame : public gc::Game
             }
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE && map_players_.contains(local_player_id_))
+        if (state_ == gc::GameState::GAME_ACTIVE &&
+            map_players_.contains(local_player_id_))
         {
             float velocity{ player_velocity_ * dt };
             // move player1_'s paddle
@@ -800,7 +792,15 @@ class OnlineGame : public gc::Game
                     if (it != map_players_.end())
                     {
                         it->second->lives_ = player_desc.lives;
+                        if (local_player_id_ == player_desc.unique_id)
+                        {
+                            shake_time_      = 0.05f;
+                            effects_->shake_ = true;
+                            ma_engine_play_sound(
+                                &engine_, "res/audio/solid.wav", nullptr);
+                        }
                     }
+
                     break;
                 }
                 case GameMsgTypes::GameAddBall:
@@ -858,14 +858,14 @@ class OnlineGame : public gc::Game
         // update_powerups(dt);
 
         // reduce shake time
-        // if (shake_time_ > 0.0f)
-        // {
-        //     shake_time_ -= dt;
-        //     if (shake_time_ <= 0.0f)
-        //     {
-        //         effects_->shake_ = false;
-        //     }
-        // }
+        if (shake_time_ > 0.0f)
+        {
+            shake_time_ -= dt;
+            if (shake_time_ <= 0.0f)
+            {
+                effects_->shake_ = false;
+            }
+        }
 
         // // reduce player 1 lives
         // if (ball_->pos_.y >= screen_info_.height - ball_->size_.y)
