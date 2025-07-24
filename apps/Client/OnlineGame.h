@@ -410,6 +410,7 @@ class OnlineGame : public gc::Game
                 {
                     client_.disconnect();
                     map_players_.clear();
+                    draw_ball_                  = false;
                     show_game_active_menu_popup = false;
                     state_                      = gc::GameState::GAME_MAIN_MENU;
                 }
@@ -515,6 +516,7 @@ class OnlineGame : public gc::Game
                 client_.send(msg_disconnect);
                 client_.disconnect();
                 map_players_.clear();
+                draw_ball_ = false;
             }
         }
 
@@ -727,6 +729,7 @@ class OnlineGame : public gc::Game
                 {
                     client_.disconnect();
                     map_players_.clear();
+                    draw_ball_              = false;
                     show_server_full_popup_ = true;
                     state_                  = gc::GameState::GAME_MAIN_MENU;
                     break;
@@ -766,6 +769,7 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::GameActive:
                 {
                     state_ = gc::GameState::GAME_ACTIVE;
+                    draw_ball_ = true;
                     break;
                 }
                 case GameMsgTypes::GameUpdatePlayer:
@@ -801,11 +805,6 @@ class OnlineGame : public gc::Game
                         }
                     }
 
-                    break;
-                }
-                case GameMsgTypes::GameAddBall:
-                {
-                    draw_ball_ = true;
                     break;
                 }
                 case GameMsgTypes::GameUpdateBall:

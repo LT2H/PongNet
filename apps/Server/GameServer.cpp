@@ -8,6 +8,8 @@
 #include "NetCommon/NetConnection.h"
 #include "NetCommon/NetMessage.h"
 #include "NetCommon/NetServer.h"
+#include "glm/detail/qualifier.hpp"
+#include "glm/fwd.hpp"
 #include <GameCommon/BallDesc.h>
 
 class Server : public net::ServerInterface<GameMsgTypes>
@@ -138,12 +140,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
                               ball_pos,
                               initial_ball_velocity_,
                               glm::vec2{ ball_radius_ * 2.0, ball_radius_ * 2.0 } };
-
-                    net::Message<GameMsgTypes> msg_add_ball{};
-                    msg_add_ball.header.id = GameMsgTypes::GameAddBall;
-                    msg_add_ball << ball_;
-                    message_all_clients(msg_add_ball);
-
+                              
                     allow_connections_ = false; // The server now has 2 players,
                                                 // prevent all further connections
                 }
@@ -530,7 +527,6 @@ class Server : public net::ServerInterface<GameMsgTypes>
 
         game_active_       = false;
         allow_connections_ = true;
-        std::cout << "RESETING THE GAME" << std::endl;
     }
 
   private:
