@@ -6,6 +6,7 @@
 #include "GLFW/glfw3.h"
 #include "GameCommon/BallDesc.h"
 #include "GameCommon/BallObject.h"
+#include "GameCommon/Common.h"
 #include "NetCommon/NetMessage.h"
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/PlayerDesc.h>
@@ -191,7 +192,10 @@ class OnlineGame : public gc::Game
             std::cerr << "Failed to initialize audio\n";
             return false;
         }
-        ma_engine_play_sound(&engine_, "res/audio/breakout.mp3", nullptr);
+
+        ma_sound_init_from_file(
+            &engine_, "res/audio/music/main-menu.wav", 0, nullptr, nullptr, &sound_);
+        ma_sound_start(&sound_);
 
         // UI
         IMGUI_CHECKVERSION();
@@ -443,10 +447,20 @@ class OnlineGame : public gc::Game
             if (won_)
             {
                 endgame_msg = "YOU WON";
+                ma_sound_stop(&sound_);
+                ma_sound_uninit(&sound_);
+
+                ma_sound_init_from_file(&engine_, "res/audio/music/victory.wav", 0, nullptr, nullptr, &sound_);
+                ma_sound_start(&sound_);
             }
             else
             {
                 endgame_msg = "YOU LOST";
+                ma_sound_stop(&sound_);
+                ma_sound_uninit(&sound_);
+
+                ma_sound_init_from_file(&engine_, "res/audio/music/defeat.wav", 0, nullptr, nullptr, &sound_);
+                ma_sound_start(&sound_);
             }
 
             text_->render_text(endgame_msg,
@@ -578,15 +592,11 @@ class OnlineGame : public gc::Game
                     {
                         box.destroyed_ = true;
                         spawn_powerups(box);
-                        ma_engine_play_sound(
-                            &engine_, "res/audio/bleep.mp3", nullptr);
                     }
                     else
                     { // if block is solid, enable shake effect
                         shake_time_      = 0.05f;
                         effects_->shake_ = true;
-                        ma_engine_play_sound(
-                            &engine_, "res/audio/solid.mp3", nullptr);
                     }
 
                     // collision resolution
@@ -769,6 +779,12 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::GameActive:
                 {
                     state_ = gc::GameState::GAME_ACTIVE;
+                    ma_sound_stop(&sound_);
+                    ma_sound_uninit(&sound_);
+    
+                    ma_sound_init_from_file(&engine_, "res/audio/music/playing.wav", 0, nullptr, nullptr, &sound_);
+                    ma_sound_start(&sound_);
+
                     draw_ball_ = true;
                     break;
                 }
@@ -800,8 +816,7 @@ class OnlineGame : public gc::Game
                         {
                             shake_time_      = 0.05f;
                             effects_->shake_ = true;
-                            ma_engine_play_sound(
-                                &engine_, "res/audio/solid.wav", nullptr);
+                            ma_engine_play_sound(&engine_, "res/audio/sound/solid.wav", nullptr);
                         }
                     }
 
@@ -817,7 +832,7 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GamePlayPadSound:
                 {
-                    ma_engine_play_sound(&engine_, "res/audio/bleep.wav", nullptr);
+                    ma_engine_play_sound(&engine_, "res/audio/sound/hit.wav", nullptr);
                     break;
                 }
                 case GameMsgTypes::GameEnds:
@@ -900,6 +915,8 @@ class OnlineGame : public gc::Game
     Client client_{};
     u32 local_player_id_;
     gc::GameState state_{ gc::GameState::GAME_MAIN_MENU };
+
+    ma_sound sound_{};
 
     bool draw_ball_{ false };
     bool show_server_full_popup_{ false };
