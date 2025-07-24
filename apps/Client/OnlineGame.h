@@ -705,6 +705,8 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::ClientAccepted:
                 {
                     std::cout << "Server accepted client\n";
+                    map_players_.clear();
+
                     net::Message<GameMsgTypes> sending_msg{};
                     sending_msg.header.id = GameMsgTypes::ClientRegisterWithServer;
 

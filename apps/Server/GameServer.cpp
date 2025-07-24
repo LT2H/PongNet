@@ -409,6 +409,10 @@ class Server : public net::ServerInterface<GameMsgTypes>
   private:
     void tick(float dt)
     {
+        if (!game_active_ && !allow_connections_ && map_player_roster_.empty())
+        {
+            reset_game();
+        }
         if (game_active_)
         {
             update_ball(dt);
