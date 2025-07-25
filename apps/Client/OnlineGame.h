@@ -193,9 +193,7 @@ class OnlineGame : public gc::Game
             return false;
         }
 
-        ma_sound_init_from_file(
-            &engine_, "res/audio/music/main-menu.wav", 0, nullptr, nullptr, &sound_);
-        ma_sound_start(&sound_);
+        stop_and_play_new_sound("res/audio/music/main-menu.wav");
 
         // UI
         IMGUI_CHECKVERSION();
@@ -253,6 +251,7 @@ class OnlineGame : public gc::Game
         glfwTerminate();
     }
 
+  private:
     void render() override
     {
         if (state_ == gc::GameState::GAME_MAIN_MENU)
@@ -276,6 +275,8 @@ class OnlineGame : public gc::Game
 
             if (ImGui::Button("Connect"))
             {
+                ma_engine_play_sound(
+                    &engine_, "res/audio/sound/change-selection.wav", nullptr);
                 // Connect to server
                 if (client_.connect(client_.ip_to_connect().data(), 50000))
                 {
@@ -406,17 +407,25 @@ class OnlineGame : public gc::Game
             {
                 if (ImGui::Button("Close"))
                 {
+                    ma_engine_play_sound(
+                        &engine_, "res/audio/sound/change-selection.wav", nullptr);
+
                     ImGui::CloseCurrentPopup();
                     show_game_active_menu_popup = false;
                 }
 
                 if (ImGui::Button("Quit Game"))
                 {
+                    ma_engine_play_sound(
+                        &engine_, "res/audio/sound/change-selection.wav", nullptr);
+
                     client_.disconnect();
                     map_players_.clear();
                     draw_ball_                  = false;
                     show_game_active_menu_popup = false;
                     state_                      = gc::GameState::GAME_MAIN_MENU;
+
+                    stop_and_play_new_sound("res/audio/music/main-menu.wav");
                 }
                 ImGui::EndPopup();
             }
@@ -447,20 +456,10 @@ class OnlineGame : public gc::Game
             if (won_)
             {
                 endgame_msg = "YOU WON";
-                ma_sound_stop(&sound_);
-                ma_sound_uninit(&sound_);
-
-                ma_sound_init_from_file(&engine_, "res/audio/music/victory.wav", 0, nullptr, nullptr, &sound_);
-                ma_sound_start(&sound_);
             }
             else
             {
                 endgame_msg = "YOU LOST";
-                ma_sound_stop(&sound_);
-                ma_sound_uninit(&sound_);
-
-                ma_sound_init_from_file(&engine_, "res/audio/music/defeat.wav", 0, nullptr, nullptr, &sound_);
-                ma_sound_start(&sound_);
             }
 
             text_->render_text(endgame_msg,
@@ -484,6 +483,9 @@ class OnlineGame : public gc::Game
             if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER] &&
                 map_players_.contains(local_player_id_))
             {
+                ma_engine_play_sound(
+                    &engine_, "res/audio/sound/change-selection.wav", nullptr);
+
                 map_players_[local_player_id_]->is_ready = true;
                 net::Message<GameMsgTypes> msg_is_ready{};
                 msg_is_ready.header.id = GameMsgTypes::GamePlayerReady;
@@ -523,14 +525,21 @@ class OnlineGame : public gc::Game
 
             if (keys_[GLFW_KEY_ENTER])
             {
+                ma_engine_play_sound(
+                    &engine_, "res/audio/sound/change-selection.wav", nullptr);
+
                 keys_processed_[GLFW_KEY_ENTER] = true;
                 state_                          = gc::GameState::GAME_MAIN_MENU;
+
                 net::Message<GameMsgTypes> msg_disconnect{};
                 msg_disconnect.header.id = GameMsgTypes::ClientUnregisterWithServer;
                 client_.send(msg_disconnect);
+
                 client_.disconnect();
                 map_players_.clear();
                 draw_ball_ = false;
+
+                stop_and_play_new_sound("res/audio/music/main-menu.wav");
             }
         }
 
@@ -742,6 +751,9 @@ class OnlineGame : public gc::Game
                     draw_ball_              = false;
                     show_server_full_popup_ = true;
                     state_                  = gc::GameState::GAME_MAIN_MENU;
+
+                    stop_and_play_new_sound("res/audio/music/main-menu.wav");
+
                     break;
                 }
                 case GameMsgTypes::GameAddPlayer:
@@ -779,11 +791,7 @@ class OnlineGame : public gc::Game
                 case GameMsgTypes::GameActive:
                 {
                     state_ = gc::GameState::GAME_ACTIVE;
-                    ma_sound_stop(&sound_);
-                    ma_sound_uninit(&sound_);
-    
-                    ma_sound_init_from_file(&engine_, "res/audio/music/playing.wav", 0, nullptr, nullptr, &sound_);
-                    ma_sound_start(&sound_);
+                    stop_and_play_new_sound("res/audio/music/playing.wav");
 
                     draw_ball_ = true;
                     break;
@@ -816,7 +824,8 @@ class OnlineGame : public gc::Game
                         {
                             shake_time_      = 0.05f;
                             effects_->shake_ = true;
-                            ma_engine_play_sound(&engine_, "res/audio/sound/solid.wav", nullptr);
+                            ma_engine_play_sound(
+                                &engine_, "res/audio/sound/solid.wav", nullptr);
                         }
                     }
 
@@ -832,7 +841,8 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GamePlayPadSound:
                 {
-                    ma_engine_play_sound(&engine_, "res/audio/sound/hit.wav", nullptr);
+                    ma_engine_play_sound(
+                        &engine_, "res/audio/sound/bleep.wav", nullptr);
                     break;
                 }
                 case GameMsgTypes::GameEnds:
@@ -850,6 +860,15 @@ class OnlineGame : public gc::Game
                             won_ = true;
                         }
                         state_ = gc::GameState::GAME_ENDS;
+
+                        if (won_)
+                        {
+                            stop_and_play_new_sound("res/audio/music/victory.wav");
+                        }
+                        else
+                        {
+                            stop_and_play_new_sound("res/audio/music/defeat.wav");
+                        }
                     }
                     break;
                 }
@@ -907,6 +926,15 @@ class OnlineGame : public gc::Game
         }
 
         return true;
+    }
+
+    void stop_and_play_new_sound(std::string_view path)
+    {
+        ma_sound_stop(&sound_);
+        ma_sound_uninit(&sound_);
+
+        ma_sound_init_from_file(&engine_, path.data(), 0, nullptr, nullptr, &sound_);
+        ma_sound_start(&sound_);
     }
 
   private:
