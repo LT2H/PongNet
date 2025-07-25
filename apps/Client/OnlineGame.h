@@ -94,7 +94,7 @@ class OnlineGame : public gc::Game
 
         // Load textures
         gc::ResourceManager::load_texture(
-            "res/textures/awesomeface.png", true, "face");
+            "res/textures/ball.png", true, "ball");
         gc::ResourceManager::load_texture(
             "res/textures/background.jpg", false, "background");
         gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
@@ -169,7 +169,7 @@ class OnlineGame : public gc::Game
         //     ball_pos,
         //     ball_radius_,
         //     initial_ball_velocity_,
-        //     gc::ResourceManager::get_texture("face"));
+        //     gc::ResourceManager::get_texture("ball"));
 
         glm::vec2 ball_pos{ player_pos +
                             glm::vec2{ player_size_.x / 2.0f - ball_radius_,
@@ -179,7 +179,7 @@ class OnlineGame : public gc::Game
             ball_pos,
             ball_radius_,
             initial_ball_velocity_,
-            gc::ResourceManager::get_texture("face"));
+            gc::ResourceManager::get_texture("ball"));
 
         text_ = std::make_unique<gc::TextRender>(screen_info_.width,
                                                  screen_info_.height);
@@ -230,7 +230,7 @@ class OnlineGame : public gc::Game
 
             // render
             // ------
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClearColor(0.5f, 0.7f, 1.0f, 1.0f); // Soft light blue
             glClear(GL_COLOR_BUFFER_BIT);
             render();
 
