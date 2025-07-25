@@ -8,6 +8,7 @@
 #include "GameCommon/BallObject.h"
 #include "GameCommon/Common.h"
 #include "NetCommon/NetMessage.h"
+#include "imgui_internal.h"
 #include <GameCommon/ResourceManager.h>
 #include <GameCommon/PlayerDesc.h>
 
@@ -93,8 +94,7 @@ class OnlineGame : public gc::Game
             .set_matrix4("projection", projection);
 
         // Load textures
-        gc::ResourceManager::load_texture(
-            "res/textures/ball.png", true, "ball");
+        gc::ResourceManager::load_texture("res/textures/ball.png", true, "ball");
         gc::ResourceManager::load_texture(
             "res/textures/background.jpg", false, "background");
         gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
@@ -266,13 +266,32 @@ class OnlineGame : public gc::Game
                 glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
 
-            ImGui::Begin("Connect to server");
+            ImVec2 next_window_size{ 225.0f, 130.0f };
+            ImGui::SetNextWindowSize(next_window_size);
+            ImGui::SetNextWindowPos(
+                ImVec2{ static_cast<float>(screen_info_.width / 2 -
+                                           next_window_size.x / 2),
+                        static_cast<float>(screen_info_.height / 2 -
+                                           next_window_size.y / 2) },
+                ImGuiCond_Always);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10));
+
+            ImGui::PushStyleVar(
+                ImGuiStyleVar_FramePadding,
+                ImVec2(8, 6)); // Add internal padding to inputs/buttons
+            ImGui::Begin(
+                "Connect to server",
+                nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize |
+                    ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
             ImGui::Text("Enter server IP");
             ImGui::InputTextWithHint("##ServerIpInput",
                                      "e.g. 127.0.0.1",
                                      client_.ip_to_connect().data(),
                                      client_.ip_to_connect().size());
 
+            ImGui::SetCursorPosX(next_window_size.x / 2 - 29.0f);
             if (ImGui::Button("Connect"))
             {
                 ma_engine_play_sound(
@@ -288,6 +307,8 @@ class OnlineGame : public gc::Game
                     return;
                 }
             }
+            ImGui::PopStyleVar(2);
+
             ImGui::End();
 
             // Alert Server is full
@@ -295,15 +316,27 @@ class OnlineGame : public gc::Game
             {
                 ImGui::OpenPopup("ServerIsFullPopup");
             }
-            if (ImGui::BeginPopupModal(
-                    "ServerIsFullPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("ServerIsFullPopup",
+                                       nullptr,
+                                       ImGuiWindowFlags_AlwaysAutoResize |
+                                           ImGuiWindowFlags_NoTitleBar))
             {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                                    ImVec2(10, 10)); // Add space between items
+                ImGui::PushStyleVar(
+                    ImGuiStyleVar_FramePadding,
+                    ImVec2(8, 6)); // Add internal padding to inputs/buttons
+
                 ImGui::Text("Server is full");
+                ImGui::SetCursorPosX(45.0f);
                 if (ImGui::Button("OK"))
                 {
                     ImGui::CloseCurrentPopup();
                     show_server_full_popup_ = false;
                 }
+
+                ImGui::PopStyleVar(2);
+
                 ImGui::EndPopup();
             }
 
@@ -453,25 +486,28 @@ class OnlineGame : public gc::Game
         if (state_ == gc::GameState::GAME_ENDS)
         {
             std::string endgame_msg{};
+            glm::vec3 color{};
             if (won_)
             {
                 endgame_msg = "YOU WON";
+                color = {0.0f, 1.0f, 0.0f};
             }
             else
             {
                 endgame_msg = "YOU LOST";
+                color = {1.0f, 0.0f, 0.0f};
             }
 
             text_->render_text(endgame_msg,
                                320.0,
                                screen_info_.height / 2 - 20.0,
                                1.0,
-                               glm::vec3(0.0, 1.0, 0.0));
+                               color);
             text_->render_text("Press ENTER to return to main menu",
                                130.0,
                                screen_info_.height / 2,
                                1.0,
-                               glm::vec3(1.0, 1.0, 0.0));
+                               glm::vec3(1.0, 1.0, 1.0));
         }
     }
 
