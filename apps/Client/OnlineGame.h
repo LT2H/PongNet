@@ -266,7 +266,7 @@ class OnlineGame : public gc::Game
                 glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
 
-            ImVec2 next_window_size{ 225.0f, 130.0f };
+            ImVec2 next_window_size{ 225.0f, 200.0f };
             ImGui::SetNextWindowSize(next_window_size);
             ImGui::SetNextWindowPos(
                 ImVec2{ static_cast<float>(screen_info_.width / 2 -
