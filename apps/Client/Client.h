@@ -6,7 +6,7 @@
 class Client : public net::ClientInterface<GameMsgTypes>
 {
   public:
-    std::array<char, net::array_size> ip_to_connect() const
+    std::array<char, net::array_size>& ip_to_connect()
     {
         return ip_to_connect_;
     }

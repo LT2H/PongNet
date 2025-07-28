@@ -550,9 +550,46 @@ class Server : public net::ServerInterface<GameMsgTypes>
     const int MAX_PLAYERS{ 2 };
 };
 
+bool clear_failed_extraction()
+{
+    if (!std::cin)
+    {
+        if (std::cin.eof()) // If the stream was closed
+        {
+            std::exit(0);
+        }
+
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
+                        '\n'); // Remove the bad input
+        return true;
+    }
+    return false;
+}
+
+uint16_t prompt_port()
+{
+    while (true)
+    {
+        std::cout << "Enter the port you would like the server to use: ";
+        int port{};
+        std::cin >> port;
+
+        if (clear_failed_extraction())
+        {
+            std::cout << "Invalid port. Please try again\n";
+            continue;
+        }
+
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
+                        '\n'); // Remove the bad input
+        return port;
+    }
+}
+
 int main()
 {
-    Server server{ 50000 };
+    Server server{ prompt_port() };
     server.start();
     while (true)
     {

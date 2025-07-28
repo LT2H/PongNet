@@ -285,11 +285,14 @@ class OnlineGame : public gc::Game
                 nullptr,
                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize |
                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-            ImGui::Text("Enter server IP");
+            ImGui::Text("Enter server IP:");
             ImGui::InputTextWithHint("##ServerIpInput",
                                      "e.g. 127.0.0.1",
                                      client_.ip_to_connect().data(),
                                      client_.ip_to_connect().size());
+
+            ImGui::Text("Enter server port:");
+            ImGui::InputInt("##ServerPortInput",&port_, 0, 0);
 
             ImGui::SetCursorPosX(next_window_size.x / 2 - 29.0f);
             if (ImGui::Button("Connect"))
@@ -297,7 +300,7 @@ class OnlineGame : public gc::Game
                 ma_engine_play_sound(
                     &engine_, "res/audio/sound/change-selection.wav", nullptr);
                 // Connect to server
-                if (client_.connect(client_.ip_to_connect().data(), 50000))
+                if (client_.connect(client_.ip_to_connect().data(), port_))
                 {
                     state_ = gc::GameState::WAITING_TO_CONNECT;
                 }
@@ -490,19 +493,16 @@ class OnlineGame : public gc::Game
             if (won_)
             {
                 endgame_msg = "YOU WON";
-                color = {0.0f, 1.0f, 0.0f};
+                color       = { 0.0f, 1.0f, 0.0f };
             }
             else
             {
                 endgame_msg = "YOU LOST";
-                color = {1.0f, 0.0f, 0.0f};
+                color       = { 1.0f, 0.0f, 0.0f };
             }
 
-            text_->render_text(endgame_msg,
-                               320.0,
-                               screen_info_.height / 2 - 20.0,
-                               1.0,
-                               color);
+            text_->render_text(
+                endgame_msg, 320.0, screen_info_.height / 2 - 20.0, 1.0, color);
             text_->render_text("Press ENTER to return to main menu",
                                130.0,
                                screen_info_.height / 2,
@@ -986,4 +986,6 @@ class OnlineGame : public gc::Game
     bool show_server_full_popup_{ false };
     bool show_game_active_menu_popup{ false };
     bool won_{ false };
+
+    int port_{50000};
 };
