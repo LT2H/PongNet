@@ -292,7 +292,7 @@ class OnlineGame : public gc::Game
                                      client_.ip_to_connect().size());
 
             ImGui::Text("Enter server port:");
-            ImGui::InputInt("##ServerPortInput",&port_, 0, 0);
+            ImGui::InputInt("##ServerPortInput", &port_, 0, 0);
 
             ImGui::SetCursorPosX(next_window_size.x / 2 - 29.0f);
             if (ImGui::Button("Connect"))
@@ -438,9 +438,18 @@ class OnlineGame : public gc::Game
             {
                 ImGui::OpenPopup("GameActivePopup");
             }
-            if (ImGui::BeginPopupModal(
-                    "GameActivePopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("GameActivePopup",
+                                       nullptr,
+                                       ImGuiWindowFlags_AlwaysAutoResize |
+                                           ImGuiWindowFlags_NoTitleBar))
             {
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                                    ImVec2(10, 10)); // Add space between items
+                ImGui::PushStyleVar(
+                    ImGuiStyleVar_FramePadding,
+                    ImVec2(8, 6)); // Add internal padding to inputs/buttons
+
+                ImGui::SetCursorPosX(23.0f);
                 if (ImGui::Button("Close"))
                 {
                     ma_engine_play_sound(
@@ -450,6 +459,7 @@ class OnlineGame : public gc::Game
                     show_game_active_menu_popup = false;
                 }
 
+                ImGui::SetCursorPosX(10.0f);
                 if (ImGui::Button("Quit Game"))
                 {
                     ma_engine_play_sound(
@@ -463,6 +473,9 @@ class OnlineGame : public gc::Game
 
                     stop_and_play_new_sound("res/audio/music/main-menu.wav");
                 }
+
+                ImGui::PopStyleVar(2);
+
                 ImGui::EndPopup();
             }
 
@@ -987,5 +1000,5 @@ class OnlineGame : public gc::Game
     bool show_game_active_menu_popup{ false };
     bool won_{ false };
 
-    int port_{50000};
+    int port_{ 50000 };
 };
