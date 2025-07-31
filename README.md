@@ -17,6 +17,7 @@ A client-server **online Pong game** built using a small custom framework that w
   - [GLM (OpenGL Mathematics)](https://github.com/g-truc/glm)
   - [miniaudio](https://miniaud.io/)
 - **Build System**: CMake
+- **Compilers**: Clang 14+, GCC 11+, MSVC 17.1+
 - **Platforms**: Windows & Linux
 - **Architecture**: Client-Server over TCP
 ## Getting Started
@@ -50,6 +51,14 @@ These are required by **GLFW**:
   3. Connect: Each client enters the server’s IP and port.
 
   4. Play: The game begins automatically when both players are ready.
+
+**Controls**
+
+  - A / D – Move left / right
+
+  - SPACEBAR – Launch the ball
+
+  - ESC – Open the quit menu
 
 ## License
 - This repository is licensed under Apache 2.0 (see included LICENSE.txt file for more details)
