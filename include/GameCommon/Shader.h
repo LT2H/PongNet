@@ -2,7 +2,7 @@
 
 #include "Common.h"
 
-namespace gc
+namespace gcom
 {
 class Shader
 {
@@ -40,4 +40,4 @@ class Shader
     // checks if compilation or linking failed and if so, print the error logs
     void check_compile_errors(u32 object, std::string_view type);
 };
-} // namespace gc
+} // namespace gcom

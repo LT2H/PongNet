@@ -2,7 +2,7 @@
 #include "Common.h"
 #include "GameCommon/Shader.h"
 
-namespace gc
+namespace gcom
 {
 // Holds all state information relevant to a character as loaded using FreeType
 struct Character
@@ -39,4 +39,4 @@ class TextRender
     u32 VAO_;
     u32 VBO_;
 };
-} // namespace gc
+} // namespace gcom

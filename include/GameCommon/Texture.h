@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "GameCommon/Common.h"
 
-namespace gc
+namespace gcom
 {
 // Texture2D is able to store and configure a texture in OpenGL.
 // It also hosts utility functions for easy management.
@@ -52,4 +52,4 @@ class Texture2D
         GL_LINEAR
     }; // filtering mode if texture pixels > screen pixels
 };
-} // namespace gc
+} // namespace gcom

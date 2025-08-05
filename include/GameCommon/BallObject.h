@@ -5,7 +5,7 @@
 #include "Texture.h"
 #include "BallDesc.h"
 
-namespace gc
+namespace gcom
 {
 class BallObject : public GameObject
 {
@@ -36,4 +36,4 @@ class BallObject : public GameObject
     glm::vec2 move(float dt, u32 window_width, u32 window_height);
     void reset(const glm::vec2& position, const glm::vec2& velocity);
 };
-} // namespace gc
+} // namespace gcom

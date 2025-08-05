@@ -8,7 +8,7 @@
 
 #include "Common.h"
 
-namespace gc
+namespace gcom
 {
 class Player : public GameObject
 {
@@ -41,4 +41,4 @@ class Player : public GameObject
         is_ready       = player_desc.is_ready;
     }
 };
-} // namespace gc
+} // namespace gcom

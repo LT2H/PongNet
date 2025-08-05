@@ -10,7 +10,7 @@
 #include "ScreenInfo.h"
 #include "TextRenderer.h"
 
-namespace gc
+namespace gcom
 {
 
 class Player;
@@ -136,4 +136,4 @@ class Game
 
     const u32 font_size_{ 24 };
 };
-} // namespace gc
+} // namespace gcom

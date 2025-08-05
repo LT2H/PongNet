@@ -17,7 +17,7 @@ constexpr u32 SCR_HEIGHT{ 600 };
 int main()
 {
     
-    gc::Game game{SCR_WIDTH, SCR_HEIGHT};
+    gcom::Game game{SCR_WIDTH, SCR_HEIGHT};
     if(game.init())
     {
         game.run();

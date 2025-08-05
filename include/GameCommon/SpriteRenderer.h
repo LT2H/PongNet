@@ -4,7 +4,7 @@
 #include "Common.h"
 #include "Texture.h"
 
-namespace gc
+namespace gcom
 {
 class SpriteRenderer
 {
@@ -23,4 +23,4 @@ class SpriteRenderer
 
     void init_render_data();
 };
-} // namespace gc
+} // namespace gcom

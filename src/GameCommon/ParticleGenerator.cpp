@@ -2,14 +2,14 @@
 #include "GameCommon/Shader.h"
 #include <GameCommon/ParticleGenerator.h>
 
-gc::ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture,
+gcom::ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture,
                                          u32 amount)
     : shader_{ shader }, texture_{ texture }, amount_{ amount }
 {
     init();
 }
 
-void gc::ParticleGenerator::update(float dt, GameObject& object, u32 new_particles,
+void gcom::ParticleGenerator::update(float dt, GameObject& object, u32 new_particles,
                                    glm::vec2 offset)
 {
     // add new particles
@@ -33,7 +33,7 @@ void gc::ParticleGenerator::update(float dt, GameObject& object, u32 new_particl
 }
 
 // render all particles
-void gc::ParticleGenerator::draw()
+void gcom::ParticleGenerator::draw()
 {
     // use additive blending to give it a 'glow' effect
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -55,7 +55,7 @@ void gc::ParticleGenerator::draw()
 }
 
 // render all particles
-void gc::ParticleGenerator::init()
+void gcom::ParticleGenerator::init()
 {
     // set up mesh and attribute properties
     u32 VBO;
@@ -89,7 +89,7 @@ void gc::ParticleGenerator::init()
 // particle)
 u32 last_used_particle = 0;
 
-u32 gc::ParticleGenerator::first_unused_particle()
+u32 gcom::ParticleGenerator::first_unused_particle()
 {
     // first search from last used particle, this will usually return almost
     // instantly
@@ -117,7 +117,7 @@ u32 gc::ParticleGenerator::first_unused_particle()
     return 0;
 }
 
-void gc::ParticleGenerator::respawn_particle(Particle& particle, GameObject& object,
+void gcom::ParticleGenerator::respawn_particle(Particle& particle, GameObject& object,
                                              const glm::vec2& offset)
 {
     float random{ ((std::rand() % 100) - 50) / 10.0f };

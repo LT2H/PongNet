@@ -2,7 +2,7 @@
 #include "GameCommon/ResourceManager.h"
 #include <GameCommon/GameLevel.h>
 
-void gc::GameLevel::load(std::string_view file, u32 level_width, u32 level_height)
+void gcom::GameLevel::load(std::string_view file, u32 level_width, u32 level_height)
 {
     // Clear old data
     bricks.clear();
@@ -33,7 +33,7 @@ void gc::GameLevel::load(std::string_view file, u32 level_width, u32 level_heigh
     }
 }
 
-void gc::GameLevel::draw(SpriteRenderer& renderer)
+void gcom::GameLevel::draw(SpriteRenderer& renderer)
 {
     for (GameObject& brick : bricks)
     {
@@ -44,7 +44,7 @@ void gc::GameLevel::draw(SpriteRenderer& renderer)
     }
 }
 
-bool gc::GameLevel::is_completed()
+bool gcom::GameLevel::is_completed()
 {
     for (GameObject& brick : bricks)
     {
@@ -56,7 +56,7 @@ bool gc::GameLevel::is_completed()
     return true;
 }
 
-void gc::GameLevel::init(const std::vector<std::vector<u32>>& tile_data,
+void gcom::GameLevel::init(const std::vector<std::vector<u32>>& tile_data,
                          u32 level_width, u32 level_height)
 {
     // Calculate dimensions

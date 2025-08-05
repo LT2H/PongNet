@@ -9,7 +9,7 @@
 // game object entity. Each object in the game likely needs the
 // minimal of state as described within GameObject.
 
-namespace gc
+namespace gcom
 {
 class GameObject
 {
@@ -37,4 +37,4 @@ class GameObject
     Texture2D sprite_;
 };
 
-} // namespace gc
+} // namespace gcom

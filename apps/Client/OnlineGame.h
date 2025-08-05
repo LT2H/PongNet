@@ -16,11 +16,11 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-class OnlineGame : public gc::Game
+class OnlineGame : public gcom::Game
 {
 
   public:
-    OnlineGame(u32 width, u32 height) : gc::Game(width, height) {}
+    OnlineGame(u32 width, u32 height) : gcom::Game(width, height) {}
 
     bool init() override
     {
@@ -66,13 +66,13 @@ class OnlineGame : public gc::Game
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // Load shaders
-        gc::ResourceManager::load_shader(
+        gcom::ResourceManager::load_shader(
             "res/shaders/sprite.vert", "res/shaders/sprite.frag", "", "sprite");
-        gc::ResourceManager::load_shader("res/shaders/particle.vert",
+        gcom::ResourceManager::load_shader("res/shaders/particle.vert",
                                          "res/shaders/particle.frag",
                                          "",
                                          "particle");
-        gc::ResourceManager::load_shader("res/shaders/postprocessing.vert",
+        gcom::ResourceManager::load_shader("res/shaders/postprocessing.vert",
                                          "res/shaders/postprocessing.frag",
                                          "",
                                          "postprocessing");
@@ -85,60 +85,60 @@ class OnlineGame : public gc::Game
                                          -1.0f,
                                          1.0f) };
 
-        gc::ResourceManager::get_shader("sprite").use().set_integer("image", 0);
-        gc::ResourceManager::get_shader("sprite").set_matrix4("projection",
+        gcom::ResourceManager::get_shader("sprite").use().set_integer("image", 0);
+        gcom::ResourceManager::get_shader("sprite").set_matrix4("projection",
                                                               projection);
 
-        gc::ResourceManager::get_shader("particle").use().set_integer("sprite", 0);
-        gc::ResourceManager::get_shader("particle")
+        gcom::ResourceManager::get_shader("particle").use().set_integer("sprite", 0);
+        gcom::ResourceManager::get_shader("particle")
             .set_matrix4("projection", projection);
 
         // Load textures
-        gc::ResourceManager::load_texture("res/textures/ball.png", true, "ball");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture("res/textures/ball.png", true, "ball");
+        gcom::ResourceManager::load_texture(
             "res/textures/background.jpg", false, "background");
-        gc::ResourceManager::load_texture("res/textures/block.png", false, "block");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture("res/textures/block.png", false, "block");
+        gcom::ResourceManager::load_texture(
             "res/textures/indestructible_block.png", false, "indestructible_block");
-        gc::ResourceManager::load_texture("res/textures/paddle.png", true, "paddle");
+        gcom::ResourceManager::load_texture("res/textures/paddle.png", true, "paddle");
 
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/particle.png", true, "particle");
 
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_speed.png", true, "powerup_speed");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_sticky.png", true, "powerup_sticky");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_increase.png", true, "powerup_increase");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_confuse.png", true, "powerup_confuse");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_chaos.png", true, "powerup_chaos");
-        gc::ResourceManager::load_texture(
+        gcom::ResourceManager::load_texture(
             "res/textures/powerup_passthrough.png", true, "powerup_passthrough");
 
         // Set render-specific controls
-        sprite_renderer_ = std::make_unique<gc::SpriteRenderer>(
-            gc::ResourceManager::get_shader("sprite"));
-        particles_ = std::make_unique<gc::ParticleGenerator>(
-            gc::ResourceManager::get_shader("particle"),
-            gc::ResourceManager::get_texture("particle"),
+        sprite_renderer_ = std::make_unique<gcom::SpriteRenderer>(
+            gcom::ResourceManager::get_shader("sprite"));
+        particles_ = std::make_unique<gcom::ParticleGenerator>(
+            gcom::ResourceManager::get_shader("particle"),
+            gcom::ResourceManager::get_texture("particle"),
             500);
-        effects_ = std::make_unique<gc::PostProcessor>(
-            gc::ResourceManager::get_shader("postprocessing"),
+        effects_ = std::make_unique<gcom::PostProcessor>(
+            gcom::ResourceManager::get_shader("postprocessing"),
             screen_info_.width,
             screen_info_.height);
 
         // Load levels
-        gc::GameLevel one;
+        gcom::GameLevel one;
         one.load("res/levels/one.lvl", screen_info_.width, screen_info_.height / 2);
-        gc::GameLevel two;
+        gcom::GameLevel two;
         two.load("res/levels/two.lvl", screen_info_.width, screen_info_.height / 2);
-        gc::GameLevel three;
+        gcom::GameLevel three;
         three.load(
             "res/levels/three.lvl", screen_info_.width, screen_info_.height / 2);
-        gc::GameLevel four;
+        gcom::GameLevel four;
         four.load(
             "res/levels/four.lvl", screen_info_.width, screen_info_.height / 2);
 
@@ -153,35 +153,35 @@ class OnlineGame : public gc::Game
                                              player_size_.x / 2.0f,
                                          screen_info_.height - player_size_.y } };
 
-        // player1_ = std::make_unique<gc::Player>(
+        // player1_ = std::make_unique<gcom::Player>(
         //     3, player_pos, player_size_,
-        //     gc::ResourceManager::get_texture("paddle"));
+        //     gcom::ResourceManager::get_texture("paddle"));
 
         // glm::vec2 ball_pos{ player_pos +
         //                     glm::vec2{ player_size_.x / 2.0f - ball_radius_,
         //                                -ball_radius_ * 2.0f } };
 
-        // // local_player2_ = std::make_unique<gc::Player>(
+        // // local_player2_ = std::make_unique<gcom::Player>(
         // //     3, player_pos, player_size_,
-        // //     gc::ResourceManager::get_texture("paddle"));
+        // //     gcom::ResourceManager::get_texture("paddle"));
 
-        // ball_ = std::make_shared<gc::BallObject>(
+        // ball_ = std::make_shared<gcom::BallObject>(
         //     ball_pos,
         //     ball_radius_,
         //     initial_ball_velocity_,
-        //     gc::ResourceManager::get_texture("ball"));
+        //     gcom::ResourceManager::get_texture("ball"));
 
         glm::vec2 ball_pos{ player_pos +
                             glm::vec2{ player_size_.x / 2.0f - ball_radius_,
                                        -ball_radius_ * 2.0f } };
 
-        ball_ = std::make_shared<gc::BallObject>(
+        ball_ = std::make_shared<gcom::BallObject>(
             ball_pos,
             ball_radius_,
             initial_ball_velocity_,
-            gc::ResourceManager::get_texture("ball"));
+            gcom::ResourceManager::get_texture("ball"));
 
-        text_ = std::make_unique<gc::TextRender>(screen_info_.width,
+        text_ = std::make_unique<gcom::TextRender>(screen_info_.width,
                                                  screen_info_.height);
         text_->load("res/fonts/OCRAEXT.TTF", font_size_);
 
@@ -244,7 +244,7 @@ class OnlineGame : public gc::Game
 
         // delete all resources as loaded using the resource manager
         // ---------------------------------------------------------
-        gc::ResourceManager::clear();
+        gcom::ResourceManager::clear();
 
         // glfw: terminate, clearing all previously allocated GLFW resources.
         // ------------------------------------------------------------------
@@ -254,14 +254,14 @@ class OnlineGame : public gc::Game
   private:
     void render() override
     {
-        if (state_ == gc::GameState::GAME_MAIN_MENU)
+        if (state_ == gcom::GameState::GAME_MAIN_MENU)
         {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
             sprite_renderer_->draw_sprite(
-                gc::ResourceManager::get_texture("background"),
+                gcom::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
                 glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
@@ -302,7 +302,7 @@ class OnlineGame : public gc::Game
                 // Connect to server
                 if (client_.connect(client_.ip_to_connect().data(), port_))
                 {
-                    state_ = gc::GameState::WAITING_TO_CONNECT;
+                    state_ = gcom::GameState::WAITING_TO_CONNECT;
                 }
                 else
                 {
@@ -349,10 +349,10 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        if (state_ == gc::GameState::WAITING_TO_CONNECT)
+        if (state_ == gcom::GameState::WAITING_TO_CONNECT)
         {
             sprite_renderer_->draw_sprite(
-                gc::ResourceManager::get_texture("background"),
+                gcom::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
                 glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
@@ -363,15 +363,15 @@ class OnlineGame : public gc::Game
             return;
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE ||
-            state_ == gc::GameState::WAITING_FOR_OTHER_PLAYER ||
-            state_ == gc::GameState::GAME_READY ||
-            state_ == gc::GameState::GAME_ENDS)
+        if (state_ == gcom::GameState::GAME_ACTIVE ||
+            state_ == gcom::GameState::WAITING_FOR_OTHER_PLAYER ||
+            state_ == gcom::GameState::GAME_READY ||
+            state_ == gcom::GameState::GAME_ENDS)
         {
             effects_->begin_render();
             // Draw background
             sprite_renderer_->draw_sprite(
-                gc::ResourceManager::get_texture("background"),
+                gcom::ResourceManager::get_texture("background"),
                 glm::vec2(0.0f, 0.0f),
                 glm::vec2(screen_info_.width, screen_info_.height),
                 0.0f);
@@ -469,7 +469,7 @@ class OnlineGame : public gc::Game
                     map_players_.clear();
                     draw_ball_                  = false;
                     show_game_active_menu_popup = false;
-                    state_                      = gc::GameState::GAME_MAIN_MENU;
+                    state_                      = gcom::GameState::GAME_MAIN_MENU;
 
                     stop_and_play_new_sound("res/audio/music/main-menu.wav");
                 }
@@ -483,7 +483,7 @@ class OnlineGame : public gc::Game
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
 
-        if (state_ == gc::GameState::GAME_READY)
+        if (state_ == gcom::GameState::GAME_READY)
         {
             text_->render_text(
                 "Press ENTER to get ready", 250.0f, screen_info_.height / 2, 1.0f);
@@ -493,13 +493,13 @@ class OnlineGame : public gc::Game
             //                    0.75f);
         }
 
-        if (state_ == gc::GameState::WAITING_FOR_OTHER_PLAYER)
+        if (state_ == gcom::GameState::WAITING_FOR_OTHER_PLAYER)
         {
             text_->render_text(
                 "Waiting for other player", 250.0f, screen_info_.height / 2, 1.0f);
         }
 
-        if (state_ == gc::GameState::GAME_ENDS)
+        if (state_ == gcom::GameState::GAME_ENDS)
         {
             std::string endgame_msg{};
             glm::vec3 color{};
@@ -527,7 +527,7 @@ class OnlineGame : public gc::Game
     void process_input(float dt)
     {
         // Control of Player object
-        if (state_ == gc::GameState::GAME_READY)
+        if (state_ == gcom::GameState::GAME_READY)
         {
             if (keys_[GLFW_KEY_ENTER] && !keys_processed_[GLFW_KEY_ENTER] &&
                 map_players_.contains(local_player_id_))
@@ -540,7 +540,7 @@ class OnlineGame : public gc::Game
                 msg_is_ready.header.id = GameMsgTypes::GamePlayerReady;
                 client_.send(msg_is_ready);
 
-                state_ = gc::GameState::WAITING_FOR_OTHER_PLAYER;
+                state_ = gcom::GameState::WAITING_FOR_OTHER_PLAYER;
 
                 keys_processed_[GLFW_KEY_ENTER] = true;
             }
@@ -563,13 +563,13 @@ class OnlineGame : public gc::Game
             // }
         }
 
-        if (state_ == gc::GameState::GAME_ENDS)
+        if (state_ == gcom::GameState::GAME_ENDS)
         {
             // if (keys_[GLFW_KEY_ENTER])
             // {
             //     keys_processed_[GLFW_KEY_ENTER] = true;
             //     effects_->chaos_                = false;
-            //     state_                          = gc::GameState::GAME_READY;
+            //     state_                          = gcom::GameState::GAME_READY;
             // }
 
             if (keys_[GLFW_KEY_ENTER])
@@ -578,7 +578,7 @@ class OnlineGame : public gc::Game
                     &engine_, "res/audio/sound/change-selection.wav", nullptr);
 
                 keys_processed_[GLFW_KEY_ENTER] = true;
-                state_                          = gc::GameState::GAME_MAIN_MENU;
+                state_                          = gcom::GameState::GAME_MAIN_MENU;
 
                 net::Message<GameMsgTypes> msg_disconnect{};
                 msg_disconnect.header.id = GameMsgTypes::ClientUnregisterWithServer;
@@ -592,7 +592,7 @@ class OnlineGame : public gc::Game
             }
         }
 
-        if (state_ == gc::GameState::GAME_ACTIVE &&
+        if (state_ == gcom::GameState::GAME_ACTIVE &&
             map_players_.contains(local_player_id_))
         {
             float velocity{ player_velocity_ * dt };
@@ -638,11 +638,11 @@ class OnlineGame : public gc::Game
 
     void do_collisions() override
     {
-        for (gc::GameObject& box : levels_[current_level_].bricks)
+        for (gcom::GameObject& box : levels_[current_level_].bricks)
         {
             if (!box.destroyed_)
             {
-                gc::Collision collision{ check_collision(*ball_, box) };
+                gcom::Collision collision{ check_collision(*ball_, box) };
                 if (std::get<0>(collision)) // if collision is true
                 {
                     // destroy block if not solid
@@ -658,23 +658,23 @@ class OnlineGame : public gc::Game
                     }
 
                     // collision resolution
-                    gc::Direction direction{ std::get<1>(collision) };
+                    gcom::Direction direction{ std::get<1>(collision) };
                     glm::vec2 diff_vector{ std::get<2>(collision) };
                     if (!(ball_->passthrough_ &&
                           !box.is_solid_)) // don't do collision resolution on
                                            // non-solid bricks if pass-through is
                                            // activated
                     {
-                        if (direction == gc::Direction::LEFT ||
+                        if (direction == gcom::Direction::LEFT ||
                             direction ==
-                                gc::Direction::RIGHT) // horizontal collision
+                                gcom::Direction::RIGHT) // horizontal collision
                         {
                             ball_->velocity_.x =
                                 -ball_->velocity_.x;  // reverse horizontal velocity
                             // relocate
                             float penetration{ ball_->radius_ -
                                                std::abs(diff_vector.x) };
-                            if (direction == gc::Direction::LEFT)
+                            if (direction == gcom::Direction::LEFT)
                             {
                                 ball_->pos_.x += penetration; // move ball_ to right
                             }
@@ -690,7 +690,7 @@ class OnlineGame : public gc::Game
                             // relocate
                             float penetration{ ball_->radius_ -
                                                std::abs(diff_vector.y) };
-                            if (direction == gc::Direction::UP)
+                            if (direction == gcom::Direction::UP)
                             {
                                 ball_->pos_.y -= penetration; // move ball_ back up
                             }
@@ -704,7 +704,7 @@ class OnlineGame : public gc::Game
             }
         }
         // also check collisions on PowerUps and if so, activate them
-        for (gc::PowerUp& powerup : powerups_)
+        for (gcom::PowerUp& powerup : powerups_)
         {
             if (!powerup.destroyed_)
             {
@@ -727,7 +727,7 @@ class OnlineGame : public gc::Game
         }
 
         // and finally check collisions for player1_ pad (unless stuck)
-        // gc::Collision result{ check_collision(*ball_, *local_player_) };
+        // gcom::Collision result{ check_collision(*ball_, *local_player_) };
         // if (!ball_->stuck_ && std::get<0>(result))
         // {
         //     // check where it hit the board, and change velocity based on where it
@@ -772,11 +772,11 @@ class OnlineGame : public gc::Game
                     net::Message<GameMsgTypes> sending_msg{};
                     sending_msg.header.id = GameMsgTypes::ClientRegisterWithServer;
 
-                    // local_player_ = std::make_shared<gc::Player>(
+                    // local_player_ = std::make_shared<gcom::Player>(
                     //     3,
                     //     glm::vec2{ 100.0f, 100.0f },
                     //     player_size_,
-                    //     gc::ResourceManager::get_texture("paddle"));
+                    //     gcom::ResourceManager::get_texture("paddle"));
                     // sending_msg << local_player_->get_desc();
 
                     PlayerDesc local_player_desc{ .pos{ 100.0f, 100.0f },
@@ -799,7 +799,7 @@ class OnlineGame : public gc::Game
                     map_players_.clear();
                     draw_ball_              = false;
                     show_server_full_popup_ = true;
-                    state_                  = gc::GameState::GAME_MAIN_MENU;
+                    state_                  = gcom::GameState::GAME_MAIN_MENU;
 
                     stop_and_play_new_sound("res/audio/music/main-menu.wav");
 
@@ -812,11 +812,11 @@ class OnlineGame : public gc::Game
                     if (!map_players_.contains(player_desc.unique_id))
                     {
                         auto player{
-                            std::make_shared<gc::Player>(
+                            std::make_shared<gcom::Player>(
                                 3,
                                 glm::vec2{ 0.0f, 0.0f },
                                 player_size_,
-                                gc::ResourceManager::get_texture("paddle"),
+                                gcom::ResourceManager::get_texture("paddle"),
                                 screen_info_),
                         };
                         player->set_props(player_desc);
@@ -826,7 +826,7 @@ class OnlineGame : public gc::Game
                     if (player_desc.unique_id == local_player_id_)
                     {
                         // Now we exist in game world
-                        state_ = gc::GameState::GAME_READY;
+                        state_ = gcom::GameState::GAME_READY;
                     }
                     break;
                 }
@@ -839,7 +839,7 @@ class OnlineGame : public gc::Game
                 }
                 case GameMsgTypes::GameActive:
                 {
-                    state_ = gc::GameState::GAME_ACTIVE;
+                    state_ = gcom::GameState::GAME_ACTIVE;
                     stop_and_play_new_sound("res/audio/music/playing.wav");
 
                     draw_ball_ = true;
@@ -850,11 +850,11 @@ class OnlineGame : public gc::Game
                     PlayerDesc player_desc{};
                     msg >> player_desc;
 
-                    auto player{ std::make_shared<gc::Player>(
+                    auto player{ std::make_shared<gcom::Player>(
                         3,
                         glm::vec2{ 0.0f, 0.0f },
                         player_size_,
-                        gc::ResourceManager::get_texture("paddle"),
+                        gcom::ResourceManager::get_texture("paddle"),
                         screen_info_) };
                     player->set_props(player_desc);
 
@@ -908,7 +908,7 @@ class OnlineGame : public gc::Game
                         {
                             won_ = true;
                         }
-                        state_ = gc::GameState::GAME_ENDS;
+                        state_ = gcom::GameState::GAME_ENDS;
 
                         if (won_)
                         {
@@ -956,13 +956,13 @@ class OnlineGame : public gc::Game
         // }
 
         // // check win condition of player 1
-        // if (state_ == gc::GameState::GAME_ACTIVE && player1_->lives_ == 0)
+        // if (state_ == gcom::GameState::GAME_ACTIVE && player1_->lives_ == 0)
         // {
         //     reset_players();
         //     reset_level();
         //     effects_->chaos_ = true;
-        //     state_           = gc::GameState::GAME_ENDS;
-        //     winner_          = gc::Winner::Player1;
+        //     state_           = gcom::GameState::GAME_ENDS;
+        //     winner_          = gcom::Winner::Player1;
         // }
 
         // Send our player desc
@@ -987,11 +987,11 @@ class OnlineGame : public gc::Game
     }
 
   private:
-    std::unordered_map<u32, std::shared_ptr<gc::Player>> map_players_{};
-    std::shared_ptr<gc::BallObject> ball_;
+    std::unordered_map<u32, std::shared_ptr<gcom::Player>> map_players_{};
+    std::shared_ptr<gcom::BallObject> ball_;
     Client client_{};
     u32 local_player_id_;
-    gc::GameState state_{ gc::GameState::GAME_MAIN_MENU };
+    gcom::GameState state_{ gcom::GameState::GAME_MAIN_MENU };
 
     ma_sound sound_{};
 

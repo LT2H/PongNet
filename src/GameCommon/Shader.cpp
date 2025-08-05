@@ -3,13 +3,13 @@
 #include <GameCommon/Common.h>
 #include <iostream>
 
-gc::Shader& gc::Shader::use()
+gcom::Shader& gcom::Shader::use()
 {
     glUseProgram(id);
     return *this;
 }
 
-void gc::Shader::compile(std::string_view vertex_source,
+void gcom::Shader::compile(std::string_view vertex_source,
                          std::string_view fragment_source,
                          std::string_view geometry_source)
 {
@@ -63,7 +63,7 @@ void gc::Shader::compile(std::string_view vertex_source,
     }
 }
 
-void gc::Shader::set_float(std::string_view name, float value, bool use_shader)
+void gcom::Shader::set_float(std::string_view name, float value, bool use_shader)
 {
     if (use_shader)
     {
@@ -72,7 +72,7 @@ void gc::Shader::set_float(std::string_view name, float value, bool use_shader)
     glUniform1f(glGetUniformLocation(id, name.data()), value);
 }
 
-void gc::Shader::set_integer(std::string_view name, int value, bool use_shader)
+void gcom::Shader::set_integer(std::string_view name, int value, bool use_shader)
 {
     if (use_shader)
     {
@@ -81,7 +81,7 @@ void gc::Shader::set_integer(std::string_view name, int value, bool use_shader)
     glUniform1f(glGetUniformLocation(id, name.data()), value);
 }
 
-void gc::Shader::set_vector2f(std::string_view name, float x, float y,
+void gcom::Shader::set_vector2f(std::string_view name, float x, float y,
                               bool use_shader)
 {
     if (use_shader)
@@ -91,7 +91,7 @@ void gc::Shader::set_vector2f(std::string_view name, float x, float y,
     glUniform2f(glGetUniformLocation(id, name.data()), x, y);
 }
 
-void gc::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
+void gcom::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -101,7 +101,7 @@ void gc::Shader::set_vector2f(std::string_view name, const glm::vec2& value,
     glUniform2f(glGetUniformLocation(id, name.data()), value.x, value.y);
 }
 
-void gc::Shader::set_vector3f(std::string_view name, float x, float y, float z,
+void gcom::Shader::set_vector3f(std::string_view name, float x, float y, float z,
                               bool use_shader)
 {
     if (use_shader)
@@ -111,7 +111,7 @@ void gc::Shader::set_vector3f(std::string_view name, float x, float y, float z,
     glUniform3f(glGetUniformLocation(id, name.data()), x, y, z);
 }
 
-void gc::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
+void gcom::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -121,7 +121,7 @@ void gc::Shader::set_vector3f(std::string_view name, const glm::vec3& value,
     glUniform3f(glGetUniformLocation(id, name.data()), value.x, value.y, value.z);
 }
 
-void gc::Shader::set_vector4f(std::string_view name, float x, float y, float z,
+void gcom::Shader::set_vector4f(std::string_view name, float x, float y, float z,
                               float w, bool use_shader)
 {
     if (use_shader)
@@ -131,7 +131,7 @@ void gc::Shader::set_vector4f(std::string_view name, float x, float y, float z,
     glUniform4f(glGetUniformLocation(id, name.data()), x, y, z, w);
 }
 
-void gc::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
+void gcom::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
                               bool use_shader)
 {
     if (use_shader)
@@ -141,7 +141,7 @@ void gc::Shader::set_vector4f(std::string_view name, const glm::vec4& value,
     glUniform4f(
         glGetUniformLocation(id, name.data()), value.x, value.y, value.z, value.w);
 }
-void gc::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
+void gcom::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
                              bool use_shader)
 {
     if (use_shader)
@@ -152,7 +152,7 @@ void gc::Shader::set_matrix4(std::string_view name, const glm::mat4& matrix,
         glGetUniformLocation(id, name.data()), 1, false, glm::value_ptr(matrix));
 }
 
-void gc::Shader::check_compile_errors(u32 object, std::string_view type)
+void gcom::Shader::check_compile_errors(u32 object, std::string_view type)
 {
     int success{};
     std::array<char, 1024> info_log{};

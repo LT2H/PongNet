@@ -3,16 +3,16 @@
 
 #include <GameCommon/Common.h>
 
-gc::SpriteRenderer::SpriteRenderer(const Shader& shader) : shader_{ shader }
+gcom::SpriteRenderer::SpriteRenderer(const Shader& shader) : shader_{ shader }
 {
     init_render_data();
 }
 
-gc::SpriteRenderer::~SpriteRenderer() {
+gcom::SpriteRenderer::~SpriteRenderer() {
     glDeleteVertexArrays(1, &quad_VAO_);
 }
 
-void gc::SpriteRenderer::draw_sprite(const Texture2D& texture, const glm::vec2& position,
+void gcom::SpriteRenderer::draw_sprite(const Texture2D& texture, const glm::vec2& position,
                                      const glm::vec2& size, float rotate,
                                      const glm::vec3& color)
 {
@@ -38,7 +38,7 @@ void gc::SpriteRenderer::draw_sprite(const Texture2D& texture, const glm::vec2& 
     glBindVertexArray(0);
 }
 
-void gc::SpriteRenderer::init_render_data()
+void gcom::SpriteRenderer::init_render_data()
 {
     // configure VAO/VBO
     u32 VBO{};

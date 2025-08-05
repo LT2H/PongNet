@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "GameObject.h"
 
-namespace gc
+namespace gcom
 {
 class GameLevel
 {
@@ -27,4 +27,4 @@ class GameLevel
     void init(const std::vector<std::vector<u32>>& tile_data, u32 level_width,
               u32 level_height);
 };
-} // namespace gc
+} // namespace gcom

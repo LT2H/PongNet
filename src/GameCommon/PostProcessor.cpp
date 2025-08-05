@@ -2,7 +2,7 @@
 #include <GameCommon/Texture.h>
 #include <GameCommon/PostProcessor.h>
 
-gc::PostProcessor::PostProcessor(const Shader& shader, u32 width, u32 height)
+gcom::PostProcessor::PostProcessor(const Shader& shader, u32 width, u32 height)
     : post_processing_shader_{ shader }, texture_{}, width_{ width },
       height_{ height }, confuse_{ false }, chaos_{ false }, shake_{ false }
 {
@@ -73,14 +73,14 @@ gc::PostProcessor::PostProcessor(const Shader& shader, u32 width, u32 height)
         9,
         blur_kernel.data());
 }
-void gc::PostProcessor::begin_render()
+void gcom::PostProcessor::begin_render()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, MSFBO_);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void gc::PostProcessor::end_render()
+void gcom::PostProcessor::end_render()
 {
     // now resolve multisampled color-buffer into intermediate FBO to store to
     // texture
@@ -100,7 +100,7 @@ void gc::PostProcessor::end_render()
                                           // default framebuffer
 }
 
-void gc::PostProcessor::render(float time)
+void gcom::PostProcessor::render(float time)
 {
     // set uniforms/options
     post_processing_shader_.use();
@@ -116,7 +116,7 @@ void gc::PostProcessor::render(float time)
     glBindVertexArray(0);
 }
 
-void gc::PostProcessor::init_render_data()
+void gcom::PostProcessor::init_render_data()
 {
     // configure VAO/VBO
     u32 VBO{};

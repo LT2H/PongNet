@@ -3,7 +3,7 @@
 #include "Texture.h"
 #include "Shader.h"
 
-namespace gc
+namespace gcom
 {
 class ResourceManager
 {
@@ -48,4 +48,4 @@ class ResourceManager
     static Texture2D load_texture_from_file(std::string_view file, bool alpha);
 };
 
-} // namespace gc
+} // namespace gcom

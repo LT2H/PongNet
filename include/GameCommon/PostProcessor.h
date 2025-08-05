@@ -12,7 +12,7 @@
 // Shake boolean.
 // It is required to call BeginRender() before rendering the game
 // and EndRender() after rendering the game for the class to work.
-namespace gc
+namespace gcom
 {
 class PostProcessor
 {
@@ -49,4 +49,4 @@ class PostProcessor
     void init_render_data();
 };
 
-} // namespace gc
+} // namespace gcom

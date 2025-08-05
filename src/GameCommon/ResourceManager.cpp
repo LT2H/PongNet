@@ -4,10 +4,10 @@
 #include "GameCommon/Shader.h"
 #include "GameCommon/Texture.h"
 
-std::map<std::string_view, gc::Shader> gc::ResourceManager::shaders{};
-std::map<std::string_view, gc::Texture2D> gc::ResourceManager::textures{};
+std::map<std::string_view, gcom::Shader> gcom::ResourceManager::shaders{};
+std::map<std::string_view, gcom::Texture2D> gcom::ResourceManager::textures{};
 
-gc::Shader gc::ResourceManager::load_shader(std::string_view v_shader_file,
+gcom::Shader gcom::ResourceManager::load_shader(std::string_view v_shader_file,
                                             std::string_view f_shader_file,
                                             std::string_view g_shader_file,
                                             std::string_view name)
@@ -17,24 +17,24 @@ gc::Shader gc::ResourceManager::load_shader(std::string_view v_shader_file,
     return shaders[name];
 }
 
-gc::Shader gc::ResourceManager::get_shader(std::string_view name)
+gcom::Shader gcom::ResourceManager::get_shader(std::string_view name)
 {
     return shaders[name];
 }
 
-gc::Texture2D gc::ResourceManager::load_texture(std::string_view file, bool alpha,
+gcom::Texture2D gcom::ResourceManager::load_texture(std::string_view file, bool alpha,
                                                 std::string_view name)
 {
     textures[name] = load_texture_from_file(file, alpha);
     return textures[name];
 }
 
-gc::Texture2D gc::ResourceManager::get_texture(std::string_view name)
+gcom::Texture2D gcom::ResourceManager::get_texture(std::string_view name)
 {
     return textures[name];
 }
 
-void gc::ResourceManager::clear()
+void gcom::ResourceManager::clear()
 {
     for (auto& shader : shaders)
     {
@@ -47,7 +47,7 @@ void gc::ResourceManager::clear()
     }
 }
 
-void gc::ResourceManager::print_all_textures() 
+void gcom::ResourceManager::print_all_textures() 
 {
     for (const auto& pair : textures)
     {
@@ -55,7 +55,7 @@ void gc::ResourceManager::print_all_textures()
         std::cout << texture_name << "\n";
     }
 }
-gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_file,
+gcom::Shader gcom::ResourceManager::load_shader_from_file(std::string_view v_shader_file,
                                                       std::string_view f_shader_file,
                                                       std::string_view g_shader_file)
 {
@@ -121,7 +121,7 @@ gc::Shader gc::ResourceManager::load_shader_from_file(std::string_view v_shader_
     return shader;
 }
 
-gc::Texture2D gc::ResourceManager::load_texture_from_file(std::string_view file,
+gcom::Texture2D gcom::ResourceManager::load_texture_from_file(std::string_view file,
                                                           bool alpha)
 { // Create texture object
     Texture2D texture{};

@@ -5,7 +5,7 @@
 #include "Texture.h"
 #include "Shader.h"
 
-namespace gc
+namespace gcom
 {
 // Represents a single particle and its state
 struct Particle
@@ -49,4 +49,4 @@ class ParticleGenerator
                           const glm::vec2& offset = glm::vec2{ 0.0f, 0.0f });
 };
 
-} // namespace gc
+} // namespace gcom

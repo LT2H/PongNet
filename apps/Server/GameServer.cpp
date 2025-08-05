@@ -250,7 +250,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
         if (map_player_roster_.contains(temp_player_id_))
         {
             // check collisions for player 1 pad (unless stuck)
-            gc::Collision result{ check_collision(
+            gcom::Collision result{ check_collision(
                 ball_, map_player_roster_[temp_player_id_]) };
             if (map_player_roster_[temp_player_id_].player_number ==
                 PlayerNumber::One)
@@ -331,7 +331,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     }
 
 
-    gc::Collision check_collision(const BallDesc& one, const PlayerDesc& two)
+    gcom::Collision check_collision(const BallDesc& one, const PlayerDesc& two)
     {
         // get center point circle first
         glm::vec2 center{ one.pos + one.radius };
@@ -352,10 +352,10 @@ class Server : public net::ServerInterface<GameMsgTypes>
         if (glm::length(difference) <= one.radius)
             return std::make_tuple(true, vector_direction(difference), difference);
         else
-            return std::make_tuple(false, gc::Direction::UP, glm::vec2(0.0f, 0.0f));
+            return std::make_tuple(false, gcom::Direction::UP, glm::vec2(0.0f, 0.0f));
     }
 
-    gc::Direction vector_direction(const glm::vec2& target)
+    gcom::Direction vector_direction(const glm::vec2& target)
     {
         std::array<glm::vec2, 4> compass{
             glm::vec2(0.0f, 1.0f),  // up
@@ -375,7 +375,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
                 best_match = i;
             }
         }
-        return static_cast<gc::Direction>(best_match);
+        return static_cast<gcom::Direction>(best_match);
     }
 
   public:

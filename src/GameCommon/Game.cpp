@@ -10,18 +10,18 @@
 #include <GameCommon/ParticleGenerator.h>
 #include <GameCommon/PostProcessor.h>
 
-std::array<bool, 1024> gc::Game::keys_{};
-std::array<bool, 1024> gc::Game::keys_processed_{};
+std::array<bool, 1024> gcom::Game::keys_{};
+std::array<bool, 1024> gcom::Game::keys_processed_{};
 
-gc::Game::Game(u32 width, u32 height)
+gcom::Game::Game(u32 width, u32 height)
     : state_{ GameState::GAME_READY }, screen_info_{ width, height }
 {
     window_ = nullptr;
 }
 
-gc::Game::~Game() { ma_engine_uninit(&engine_); }
+gcom::Game::~Game() { ma_engine_uninit(&engine_); }
 
-bool gc::Game::init()
+bool gcom::Game::init()
 {
     // glfw: initialize and configure
     // ------------------------------
@@ -116,10 +116,10 @@ bool gc::Game::init()
         "res/textures/powerup_passthrough.png", true, "powerup_passthrough");
 
     // Set render-specific controls
-    sprite_renderer_ = std::make_unique<gc::SpriteRenderer>(
-        gc::ResourceManager::get_shader("sprite"));
-    particles_ = std::make_unique<gc::ParticleGenerator>(
-        gc::ResourceManager::get_shader("particle"),
+    sprite_renderer_ = std::make_unique<gcom::SpriteRenderer>(
+        gcom::ResourceManager::get_shader("sprite"));
+    particles_ = std::make_unique<gcom::ParticleGenerator>(
+        gcom::ResourceManager::get_shader("particle"),
         ResourceManager::get_texture("particle"),
         500);
     effects_ = std::make_unique<PostProcessor>(
@@ -188,7 +188,7 @@ bool gc::Game::init()
     return true;
 }
 
-void gc::Game::run()
+void gcom::Game::run()
 {
     // Delta time vars
     double delta_time{ 0.0f };
@@ -228,14 +228,14 @@ void gc::Game::run()
 
     // delete all resources as loaded using the resource manager
     // ---------------------------------------------------------
-    gc::ResourceManager::clear();
+    gcom::ResourceManager::clear();
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
 }
 
-void gc::Game::process_player1_input(float dt)
+void gcom::Game::process_player1_input(float dt)
 {
     if (state_ == GameState::GAME_READY)
     {
@@ -306,7 +306,7 @@ void gc::Game::process_player1_input(float dt)
     }
 }
 
-void gc::Game::process_player2_input(float dt)
+void gcom::Game::process_player2_input(float dt)
 {
     if (state_ == GameState::GAME_READY)
     {
@@ -366,7 +366,7 @@ void gc::Game::process_player2_input(float dt)
 }
 
 
-bool gc::Game::update(float dt)
+bool gcom::Game::update(float dt)
 {
     // update objects
     ball_->move(dt, screen_info_.width, screen_info_.height);
@@ -424,7 +424,7 @@ bool gc::Game::update(float dt)
     return 0;
 }
 
-void gc::Game::reset_level()
+void gcom::Game::reset_level()
 {
     if (current_level_ == 0)
     {
@@ -453,7 +453,7 @@ void gc::Game::reset_level()
     winner_ = Winner::NoOne;
 }
 
-void gc::Game::reset_players()
+void gcom::Game::reset_players()
 {
     // reset player1_/ball_ stats
     player1_->size_ = player_size_;
@@ -478,7 +478,7 @@ void gc::Game::reset_players()
 }
 
 
-void gc::Game::render()
+void gcom::Game::render()
 {
     if (state_ == GameState::GAME_ACTIVE || state_ == GameState::GAME_READY ||
         state_ == GameState::GAME_ENDS)
@@ -486,7 +486,7 @@ void gc::Game::render()
         effects_->begin_render();
         // Draw background
         sprite_renderer_->draw_sprite(
-            gc::ResourceManager::get_texture("background"),
+            gcom::ResourceManager::get_texture("background"),
             glm::vec2(0.0f, 0.0f),
             glm::vec2(screen_info_.width, screen_info_.height),
             0.0f);
@@ -558,7 +558,7 @@ void gc::Game::render()
     }
 }
 
-void gc::Game::do_collisions()
+void gcom::Game::do_collisions()
 {
     for (GameObject& box : levels_[current_level_].bricks)
     {
@@ -706,7 +706,7 @@ bool should_spawn(u32 chance)
     return random == 0;
 }
 
-void gc::Game::spawn_powerups(GameObject& block)
+void gcom::Game::spawn_powerups(GameObject& block)
 {
     if (should_spawn(75)) // 1 in 75 chance
     {
@@ -764,7 +764,7 @@ void gc::Game::spawn_powerups(GameObject& block)
     }
 }
 
-void gc::Game::active_powerup(const PowerUp& powerup)
+void gcom::Game::active_powerup(const PowerUp& powerup)
 {
     if (powerup.type_ == "speed")
     {
@@ -800,7 +800,7 @@ void gc::Game::active_powerup(const PowerUp& powerup)
     }
 }
 
-bool is_other_powerup_active(std::span<gc::PowerUp> powerups, std::string_view type)
+bool is_other_powerup_active(std::span<gcom::PowerUp> powerups, std::string_view type)
 {
     for (const auto& powerup : powerups)
     {
@@ -815,7 +815,7 @@ bool is_other_powerup_active(std::span<gc::PowerUp> powerups, std::string_view t
     return false;
 }
 
-void gc::Game::update_powerups(float dt)
+void gcom::Game::update_powerups(float dt)
 {
     for (auto& powerup : powerups_)
     {
@@ -876,7 +876,7 @@ void gc::Game::update_powerups(float dt)
         powerups_.end());
 }
 
-bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
+bool gcom::Game::check_collision(const GameObject& one, const GameObject& two)
 {
     // collsion x-axis?
     bool collision_x{ one.pos_.x + one.size_.x >= two.pos_.x &&
@@ -890,7 +890,7 @@ bool gc::Game::check_collision(const GameObject& one, const GameObject& two)
     return collision_x && collision_y;
 }
 
-gc::Collision gc::Game::check_collision(const BallObject& one, const GameObject& two)
+gcom::Collision gcom::Game::check_collision(const BallObject& one, const GameObject& two)
 {
     // get center point circle first
     glm::vec2 center{ one.pos_ + one.radius_ };
@@ -910,10 +910,10 @@ gc::Collision gc::Game::check_collision(const BallObject& one, const GameObject&
     if (glm::length(difference) <= one.radius_)
         return std::make_tuple(true, vector_direction(difference), difference);
     else
-        return std::make_tuple(false, gc::Direction::UP, glm::vec2(0.0f, 0.0f));
+        return std::make_tuple(false, gcom::Direction::UP, glm::vec2(0.0f, 0.0f));
 }
 
-gc::Direction gc::Game::vector_direction(const glm::vec2& target)
+gcom::Direction gcom::Game::vector_direction(const glm::vec2& target)
 {
     std::array<glm::vec2, 4> compass{
         glm::vec2(0.0f, 1.0f),  // up
@@ -936,12 +936,12 @@ gc::Direction gc::Game::vector_direction(const glm::vec2& target)
     return static_cast<Direction>(best_match);
 }
 
-void gc::Game::shutdown() { sprite_renderer_.reset(); }
+void gcom::Game::shutdown() { sprite_renderer_.reset(); }
 
 // process all input: query GLFW whether relevant keys are pressed/released this
 // frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void gc::Game::key_callback(GLFWwindow* window, int key, int scancode, int action,
+void gcom::Game::key_callback(GLFWwindow* window, int key, int scancode, int action,
                             int mode)
 {
     // when a user presses the escape key, we set the WindowShouldClose property to
@@ -963,7 +963,7 @@ void gc::Game::key_callback(GLFWwindow* window, int key, int scancode, int actio
 // glfw: whenever the window size changed (by OS or user resize) this callback
 // function executes
 // ---------------------------------------------------------------------------------------------
-void gc::Game::framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void gcom::Game::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and
     // height will be significantly larger than specified on retina displays.

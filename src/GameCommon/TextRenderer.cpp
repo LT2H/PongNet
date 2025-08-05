@@ -2,7 +2,7 @@
 #include <GameCommon/TextRenderer.h>
 #include <GameCommon/ResourceManager.h>
 
-gc::TextRender::TextRender(u32 width, u32 height)
+gcom::TextRender::TextRender(u32 width, u32 height)
 {
     // load and configure shader
     shader_ =
@@ -30,7 +30,7 @@ gc::TextRender::TextRender(u32 width, u32 height)
     glBindVertexArray(0);
 }
 
-void gc::TextRender::load(std::string_view font, u32 font_size)
+void gcom::TextRender::load(std::string_view font, u32 font_size)
 {
     // first clear the previously loaded Characters
     characters_.clear();
@@ -99,7 +99,7 @@ void gc::TextRender::load(std::string_view font, u32 font_size)
     FT_Done_FreeType(ft);
 }
 
-void gc::TextRender::render_text(const std::string text, float x, float y,
+void gcom::TextRender::render_text(const std::string text, float x, float y,
                                  float scale, const glm::vec3 color)
 {
     // active corresponding render state

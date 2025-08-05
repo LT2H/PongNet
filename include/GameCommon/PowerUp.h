@@ -4,7 +4,7 @@
 #include "GameCommon/GameObject.h"
 #include "GameCommon/Texture.h"
 
-namespace gc
+namespace gcom
 {
 constexpr glm::vec2 SIZE{ 60.0f, 20.0f };
 constexpr glm::vec2 VELOCITY{ 0.0F, 150.0f };
@@ -24,4 +24,4 @@ class PowerUp : public GameObject
     {
     }
 };
-} // namespace gc
+} // namespace gcom
