@@ -379,7 +379,7 @@ class Server : public net::ServerInterface<GameMsgTypes>
     }
 
   public:
-    void update(size_t max_messages, bool wait) override
+    void update(size_t max_messages, bool wait)
     {
         if (wait)
             messages_in_.wait();
