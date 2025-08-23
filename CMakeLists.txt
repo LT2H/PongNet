@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.15...4.0)
 
 # Project name and a few useful settings. Other commands can pick up the results
 project(
-  Breakout
+  PongNet
   VERSION 0.1
-  DESCRIPTION "A simple Breakout game"
+  DESCRIPTION "A simple online Pong game"
   LANGUAGES C CXX)
 
 # FetchContent added in CMake 3.11, downloads during the configure step

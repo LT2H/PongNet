@@ -1,5 +1,5 @@
 # GLAD
-set(GLAD_HEADER_LIST "${Breakout_SOURCE_DIR}/include/glad/glad.h")
+set(GLAD_HEADER_LIST "${PongNet_SOURCE_DIR}/include/glad/glad.h")
 
 # Make an automatic library - will be static or dynamic based on user setting
 add_library(glad glad/glad.c ${GLAD_HEADER_LIST})
@@ -11,7 +11,7 @@ target_include_directories(glad PUBLIC ../include)
 target_compile_features(glad PUBLIC cxx_std_20)
 
 # stb
-set(STB_HEADER_LIST "${Breakout_SOURCE_DIR}/include/stb/stb_image.h")
+set(STB_HEADER_LIST "${PongNet_SOURCE_DIR}/include/stb/stb_image.h")
 add_library(stb stb/stb_image.cpp ${STB_HEADER_LIST})
 target_include_directories(stb PUBLIC ../include)
 target_compile_features(stb PUBLIC cxx_std_20)

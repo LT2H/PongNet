@@ -39,7 +39,7 @@ bool gcom::Game::init()
     // --------------------
     window_ = glfwCreateWindow(screen_info_.width,
                                screen_info_.height,
-                               "Breakout",
+                               "Pong Net",
                                nullptr,
                                nullptr);
     if (!window_)
