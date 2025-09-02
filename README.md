@@ -1,7 +1,7 @@
 # Asio Online Pong Game (Client/Server)
 A client-server **online Pong game** built using a small custom framework that wraps **Asio** for networking, and **OpenGL** for real-time rendering.
 
-https://github.com/user-attachments/assets/5d9b1425-a0da-45c8-84b9-c39455a3e6ea
+https://github.com/user-attachments/assets/e48cd831-a8fa-4b18-8239-0fd362866342
 
 ## Features
 - **Online multiplayer Pong**: Two players connect as clients to a dedicated server that hosts the game session.
